@@ -102,7 +102,7 @@ impl Encode for CENNZnutV0 {
         let mut buf: Vec<u8> = Default::default();
         buf.extend([0, 0].into_iter());
 
-        let module_count = (self.modules.len() as u8).swap_bits();
+        let module_count = ((self.modules.len() as u8) - 1).swap_bits();
         buf.push(module_count);
 
         if let Some(m) = &self.module_order {
@@ -129,7 +129,7 @@ impl Decode for CENNZnutV0 {
             return None;
         }
 
-        let module_count = input.read_byte()?.swap_bits();
+        let module_count = (input.read_byte()?.swap_bits()) + 1;
         let mut module_order: Vec<String> = Default::default();
         let mut modules: HashMap<String, Module> = Default::default();
 
