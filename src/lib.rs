@@ -1,9 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![warn(clippy::pedantic)]
-#![feature(alloc)]
 
 #[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
 
 #[cfg(test)]
@@ -13,7 +12,6 @@ extern crate std;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
-use hashbrown::HashMap;
 use parity_codec::{Decode, Encode, Input, Output};
 
 mod test;
@@ -53,9 +51,19 @@ impl Encode for Method {
 pub struct Module {
     pub name: String,
     pub block_cooldown: Option<u32>,
-    pub methods: HashMap<String, Method>,
-    /// Internal fields preserves module order for encoding
-    method_order: Option<Vec<String>>,
+    pub methods: Vec<(String, Method)>,
+}
+
+impl Module {
+    /// Returns the method, if it exists in the Module
+    pub fn get_method(&self, method: &str) -> Option<&Method> {
+        for (name, m) in self.methods.iter() {
+            if name == method {
+                return Some(m);
+            }
+        }
+        None
+    }
 }
 
 impl Encode for Module {
@@ -77,14 +85,8 @@ impl Encode for Module {
             }
         }
 
-        if let Some(m) = &self.method_order {
-            for name in m.iter() {
-                self.methods[name].encode_to(buf);
-            }
-        } else {
-            for (_, method) in self.methods.iter() {
-                method.encode_to(buf);
-            }
+        for (_, method) in self.methods.iter() {
+            method.encode_to(buf);
         }
     }
 }
@@ -92,30 +94,31 @@ impl Encode for Module {
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CENNZnutV0 {
-    pub modules: HashMap<String, Module>,
-    /// Internal fields preserves module order for encoding
-    module_order: Option<Vec<String>>,
+    pub modules: Vec<(String, Module)>,
+}
+
+impl CENNZnutV0 {
+    /// Returns the module, if it exists in the CENNZnut
+    pub fn get_module(&self, module: &str) -> Option<&Module> {
+        for (name, m) in self.modules.iter() {
+            if name == module {
+                return Some(m);
+            }
+        }
+        None
+    }
 }
 
 impl Encode for CENNZnutV0 {
-    fn encode(&self) -> Vec<u8> {
-        let mut buf: Vec<u8> = Default::default();
-        buf.extend([0, 0].into_iter());
+    fn encode_to<T: Output>(&self, buf: &mut T) {
+        buf.write(&[0, 0]);
 
         let module_count = ((self.modules.len() as u8) - 1).swap_bits();
-        buf.push(module_count);
+        buf.push_byte(module_count);
 
-        if let Some(m) = &self.module_order {
-            for name in m.iter() {
-                self.modules[name].encode_to(&mut buf);
-            }
-        } else {
-            for (_, module) in self.modules.iter() {
-                module.encode_to(&mut buf);
-            }
+        for (_, module) in self.modules.iter() {
+            module.encode_to(buf);
         }
-
-        buf
     }
 }
 
@@ -130,19 +133,14 @@ impl Decode for CENNZnutV0 {
         }
 
         let module_count = (input.read_byte()?.swap_bits()) + 1;
-        let mut module_order: Vec<String> = Default::default();
-        let mut modules: HashMap<String, Module> = Default::default();
+        let mut modules: Vec<(String, Module)> = Default::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
-            modules.insert(m.name.clone(), m.clone());
-            module_order.push(m.name);
+            modules.push((m.name.clone(), m.clone()));
         }
 
-        Some(Self {
-            modules,
-            module_order: Some(module_order),
-        })
+        Some(Self { modules })
     }
 }
 
@@ -168,20 +166,17 @@ impl Decode for Module {
             ]));
         }
 
-        let mut method_order: Vec<String> = Default::default();
-        let mut methods: HashMap<String, Method> = Default::default();
+        let mut methods: Vec<(String, Method)> = Default::default();
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;
-            methods.insert(m.name.clone(), m.clone());
-            method_order.push(m.name);
+            methods.push((m.name.clone(), m.clone()));
         }
 
         Some(Self {
             name,
             block_cooldown: module_cooldown,
             methods,
-            method_order: Some(method_order),
         })
     }
 }
