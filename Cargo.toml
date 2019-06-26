@@ -7,3 +7,9 @@ edition = "2018"
 [dependencies]
 parity-codec = { version = "3.5.1", default-features = false }
 bit_reverse = { version = "0.1.7", default-features = false }
+
+[features]
+default = [ "std" ]
+std = [
+  "parity-codec/std"
+]

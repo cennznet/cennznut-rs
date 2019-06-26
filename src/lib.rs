@@ -5,9 +5,8 @@
 #[cfg(not(feature = "std"))]
 extern crate alloc;
 
-#[cfg(test)]
-#[macro_use]
-extern crate std;
+#[cfg(feature = "std")]
+extern crate std as alloc;
 
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
