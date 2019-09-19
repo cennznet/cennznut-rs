@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::{CENNZnutV0, Method, Module};
-use parity_codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use std::string::{String, ToString};
 use std::vec::Vec;
 

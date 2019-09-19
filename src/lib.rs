@@ -11,7 +11,7 @@ extern crate std as alloc;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
-use parity_codec::{Decode, Encode, Input, Output};
+use codec::{Decode, Encode, Input, Output};
 
 mod test;
 
@@ -122,13 +122,13 @@ impl Encode for CENNZnutV0 {
 }
 
 impl Decode for CENNZnutV0 {
-    fn decode<I: Input>(input: &mut I) -> Option<Self> {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let version = u16::from_le_bytes([
             input.read_byte()?.swap_bits(),
             input.read_byte()?.swap_bits(),
         ]);
         if version != 0 {
-            return None;
+            () //TODO: what type of error to return
         }
 
         let module_count = (input.read_byte()?.swap_bits()) + 1;
@@ -139,19 +139,19 @@ impl Decode for CENNZnutV0 {
             modules.push((m.name.clone(), m.clone()));
         }
 
-        Some(Self { modules })
+        Ok(Self { modules })
     }
 }
 
 impl Decode for Module {
-    fn decode<I: Input>(input: &mut I) -> Option<Self> {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let block_cooldown_and_method_count: u8 = input.read_byte()?.swap_bits();
         let method_count = block_cooldown_and_method_count >> 1;
 
         let mut name_buf: [u8; 32] = Default::default();
         let _ = input.read(&mut name_buf);
         let name = core::str::from_utf8(&name_buf)
-            .ok()?
+            .map_err(|_| codec::Error::from("module names should be utf8 encoded"))?
             .trim_matches(char::from(0))
             .to_string();
 
@@ -172,7 +172,7 @@ impl Decode for Module {
             methods.push((m.name.clone(), m.clone()));
         }
 
-        Some(Self {
+        Ok(Self {
             name,
             block_cooldown: module_cooldown,
             methods,
@@ -181,13 +181,13 @@ impl Decode for Module {
 }
 
 impl Decode for Method {
-    fn decode<I: Input>(input: &mut I) -> Option<Self> {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let block_cooldown_and_reserved_byte = input.read_byte()?.swap_bits();
 
         let mut name_buf: [u8; 32] = Default::default();
         let _ = input.read(&mut name_buf);
         let name = core::str::from_utf8(&name_buf)
-            .ok()?
+            .map_err(|_| codec::Error::from("method names should be utf8 encoded"))?
             .trim_matches(char::from(0))
             .to_string();
 
@@ -201,7 +201,7 @@ impl Decode for Method {
             ]));
         }
 
-        Some(Self {
+        Ok(Self {
             name,
             block_cooldown,
         })
