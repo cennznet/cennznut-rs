@@ -128,7 +128,7 @@ impl Decode for CENNZnutV0 {
             input.read_byte()?.swap_bits(),
         ]);
         if version != 0 {
-            () //TODO: what type of error to return
+            return Err(codec::Error::from("expected version : 0"));
         }
 
         let module_count = (input.read_byte()?.swap_bits()) + 1;
