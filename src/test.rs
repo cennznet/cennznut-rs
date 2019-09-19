@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::{CENNZnutV0, Method, Module};
-use parity_codec::{Decode, Encode};
+use codec::{Decode, Encode};
 use std::string::{String, ToString};
 use std::vec::Vec;
 
@@ -178,6 +178,18 @@ fn it_works_decode_with_method_cooldown() {
             .block_cooldown,
         Some(123)
     );
+}
+
+#[test]
+#[should_panic(expected = "expected version : 0")]
+fn it_works_decode_with_version_0() {
+    let encoded: Vec<u8> = vec![
+        1, 2, 3, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111, 100,
+        95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
+        0, 0, 0,
+    ];
+    CENNZnutV0::decode(&mut &encoded[..]).unwrap();
 }
 
 #[test]

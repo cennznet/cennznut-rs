@@ -5,11 +5,11 @@ authors = ["Centrality Developers <developers@centrality.ai>"]
 edition = "2018"
 
 [dependencies]
-parity-codec = { version = "3.5.1", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.0.0" }
 bit_reverse = { version = "0.1.7", default-features = false }
 
 [features]
 default = [ "std" ]
 std = [
-  "parity-codec/std"
+  "codec/std"
 ]
