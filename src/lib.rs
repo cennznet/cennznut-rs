@@ -8,6 +8,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+use alloc::borrow::ToOwned;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
@@ -16,7 +17,7 @@ use codec::{Decode, Encode, Input, Output};
 mod test;
 
 /// A CENNZnet permission domain module method
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
     pub name: String,
     pub block_cooldown: Option<u32>,
@@ -46,7 +47,7 @@ impl Encode for Method {
 }
 
 /// A CENNZnet permission domain module
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
     pub name: String,
     pub block_cooldown: Option<u32>,
@@ -91,7 +92,7 @@ impl Encode for Module {
 }
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(String, Module)>,
 }
@@ -136,7 +137,7 @@ impl Decode for CENNZnutV0 {
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
-            modules.push((m.name.clone(), m.clone()));
+            modules.push((m.name.to_owned(), m));
         }
 
         Ok(Self { modules })
@@ -169,7 +170,7 @@ impl Decode for Module {
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;
-            methods.push((m.name.clone(), m.clone()));
+            methods.push((m.name.to_owned(), m));
         }
 
         Ok(Self {
