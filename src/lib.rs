@@ -217,11 +217,11 @@ impl Decode for Method {
         if constraints_count > 0 {
             let mut constraints_buf: Vec<u8> = Default::default();
             for _ in 0..constraints_count {
-                constraints_buf.push(input.read_byte()?.swap_bits());
+                constraints_buf.push(input.read_byte()?);
             }
             let _ = match Contract::decode(&constraints_buf) {
                 Ok(c) => c,
-                Err(_e) => return Err(codec::Error::from("invalid constraints format")),
+                Err(_e) => return Err(codec::Error::from("invalid constraints codec")),
             };
             constraints = Some(constraints_buf);
         }
