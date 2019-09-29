@@ -1,6 +1,6 @@
 #![cfg(test)]
 
-use crate::{CENNZnutV0, Method, Module};
+use crate::{CENNZnutV0, Method, Module, Validate};
 use codec::{Decode, Encode};
 use std::string::{String, ToString};
 use std::vec::Vec;
@@ -239,4 +239,35 @@ fn it_works_with_lots_of_things_codec() {
     ];
     assert_eq!(cennznut.encode(), encoded);
     assert_eq!(cennznut, CENNZnutV0::decode(&mut &encoded[..]).unwrap());
+}
+
+#[test]
+fn it_works_with_validation() {
+    let method = Method {
+        name: "method_test".to_string(),
+        block_cooldown: Some(123),
+    };
+
+    let mut methods: Vec<(String, Method)> = Default::default();
+    methods.push((method.name.clone(), method.clone()));
+
+    let module = Module {
+        name: "module_test".to_string(),
+        block_cooldown: Some(86_400),
+        methods: methods.clone(),
+    };
+    let mut modules: Vec<(String, Module)> = Default::default();
+    modules.push((module.name.clone(), module.clone()));
+
+    let cennznut = CENNZnutV0 { modules };
+
+    assert_eq!(cennznut.validate(&module.name, &method.name), Ok(()));
+    assert_eq!(
+        cennznut.validate("module_test2", &method.name),
+        Err("CENNZnut does not grant permission for module")
+    );
+    assert_eq!(
+        cennznut.validate(&module.name, "method_test2"),
+        Err("CENNZnut does not grant permission for method")
+    );
 }
