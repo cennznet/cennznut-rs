@@ -245,18 +245,18 @@ fn it_works_encode_with_constraints() {
 
 #[test]
 fn it_works_decode_with_constraints() {
-    let encoded_cennznut: Vec<u8> = vec![
+    let encoded: Vec<u8> = vec![
         0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 74, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 192, 128, 16, 246,
         0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116, 105,
         110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1,
     ];
-    CENNZnutV0::decode(&mut &encoded_cennznut[..]).unwrap();
+    let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
+    assert_eq!(c.encode(), encoded);
 }
 
 #[test]
-#[should_panic(expected = "invalid constraints codec")]
 fn it_works_decode_with_valid_constraints() {
     let encoded_cennznut: Vec<u8> = vec![
         0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -272,9 +272,18 @@ fn it_works_decode_with_valid_constraints() {
     let encoded_with_n_too_short: Vec<u8> = [encoded_cennznut.clone(), n_too_short].concat();
     let encoded_with_n_too_large: Vec<u8> = [encoded_cennznut.clone(), n_too_large].concat();
 
-    CENNZnutV0::decode(&mut &encoded_with_bad_type_id[..]).unwrap();
-    CENNZnutV0::decode(&mut &encoded_with_n_too_short[..]).unwrap();
-    CENNZnutV0::decode(&mut &encoded_with_n_too_large[..]).unwrap();
+    assert_eq!(
+        CENNZnutV0::decode(&mut &encoded_with_bad_type_id[..]),
+        Err(codec::Error::from("invalid constraints codec")),
+    );
+    assert_eq!(
+        CENNZnutV0::decode(&mut &encoded_with_n_too_short[..]),
+        Err(codec::Error::from("Not enough data to fill buffer")),
+    );
+    assert_eq!(
+        CENNZnutV0::decode(&mut &encoded_with_n_too_large[..]),
+        Err(codec::Error::from("invalid constraints codec")),
+    );
 }
 
 #[test]
