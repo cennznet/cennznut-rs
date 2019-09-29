@@ -264,10 +264,10 @@ fn it_works_with_validation() {
     assert_eq!(cennznut.validate(&module.name, &method.name), Ok(()));
     assert_eq!(
         cennznut.validate("module_test2", &method.name),
-        Err("Doughnut does not grant permission for module")
+        Err("CENNZnut does not grant permission for module")
     );
     assert_eq!(
         cennznut.validate(&module.name, "method_test2"),
-        Err("Doughnut does not grant permission for method")
+        Err("CENNZnut does not grant permission for method")
     );
 }
