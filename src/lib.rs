@@ -154,11 +154,11 @@ impl Validate for CENNZnutV0 {
     fn validate(&self, module_name: &str, method_name: &str) -> Result<(), &'static str> {
         let module = self
             .get_module(module_name)
-            .ok_or("Doughnut does not grant permission for module")?;
+            .ok_or("CENNZnut does not grant permission for module")?;
         module
             .get_method(method_name)
             .map(|_| ())
-            .ok_or("Doughnut does not grant permission for method")
+            .ok_or("CENNZnut does not grant permission for method")
     }
 }
 
