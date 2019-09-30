@@ -32,11 +32,12 @@ impl Encode for Method {
         } else {
             0
         };
-        let constraints_cnt_byte: u8 = match &self.constraints {
-            Some(constraints) => ((constraints.len() as u8) << 1).swap_bits(),
-            None => 0,
+        let has_constraints_byte: u8 = if self.constraints.is_some() {
+            0b0100_0000
+        } else {
+            0
         };
-        buf.push_byte(has_cooldown_byte | constraints_cnt_byte);
+        buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
         let mut name = [0u8; 32];
         for i in 0..self.name.len() {
@@ -50,8 +51,9 @@ impl Encode for Method {
             }
         }
 
-        if let Some(contract) = &self.constraints {
-            buf.write(&contract);
+        if let Some(constraints) = &self.constraints {
+            buf.push_byte((constraints.len() as u8).swap_bits());
+            buf.write(&constraints);
         }
     }
 }
@@ -193,7 +195,7 @@ impl Decode for Module {
 
 impl Decode for Method {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let block_cooldown_and_constraints_count = input.read_byte()?.swap_bits();
+        let block_cooldown_and_constraints = input.read_byte()?.swap_bits();
 
         let mut name_buf: [u8; 32] = Default::default();
         let _ = input.read(&mut name_buf);
@@ -203,7 +205,7 @@ impl Decode for Method {
             .to_string();
 
         let mut block_cooldown: Option<u32> = None;
-        if (block_cooldown_and_constraints_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+        if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
             block_cooldown = Some(u32::from_le_bytes([
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
@@ -213,15 +215,14 @@ impl Decode for Method {
         }
 
         let mut constraints: Option<Vec<u8>> = None;
-        let constraints_count = block_cooldown_and_constraints_count >> 1;
-        if constraints_count > 0 {
+        if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+            let constraints_length = input.read_byte()?.swap_bits();
             let mut constraints_buf: Vec<u8> = Default::default();
-            for _ in 0..constraints_count {
+            for _ in 0..constraints_length {
                 constraints_buf.push(input.read_byte()?);
             }
-            let _ = match Contract::decode(&constraints_buf) {
-                Ok(c) => c,
-                Err(_e) => return Err(codec::Error::from("invalid constraints codec")),
+            if let Err(_) = Contract::decode(&constraints_buf) {
+                return Err(codec::Error::from("invalid constraints codec"));
             };
             constraints = Some(constraints_buf);
         }
