@@ -342,6 +342,7 @@ fn it_works_with_validation() {
     let method = Method {
         name: "method_test".to_string(),
         block_cooldown: Some(123),
+        constraints: None,
     };
 
     let mut methods: Vec<(String, Method)> = Default::default();
