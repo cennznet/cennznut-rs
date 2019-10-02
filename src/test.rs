@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 use crate::{CENNZnutV0, Method, Module, Validate};
+use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
 use pact::interpreter::OpCode;
@@ -28,15 +29,17 @@ fn it_works_encode() {
     modules.push((module.name.clone(), module.clone()));
 
     let cennznut = CENNZnutV0 { modules };
+    let encoded = cennznut.encode();
 
     assert_eq!(
-        cennznut.encode(),
+        encoded,
         vec![
             0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116,
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         ]
     );
+    assert_eq!(encoded[2], 0); // 1 module encoded as 0
 }
 
 #[test]
@@ -215,7 +218,7 @@ fn it_works_encode_with_constraints() {
     let method = Method {
         name: "method_test".to_string(),
         block_cooldown: None,
-        constraints: Some(constraints),
+        constraints: Some(constraints.clone()),
     };
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
@@ -230,9 +233,10 @@ fn it_works_encode_with_constraints() {
     modules.push((module.name.clone(), module.clone()));
 
     let cennznut = CENNZnutV0 { modules };
+    let encoded = cennznut.encode();
 
     assert_eq!(
-        cennznut.encode(),
+        encoded,
         vec![
             0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116,
@@ -240,6 +244,11 @@ fn it_works_encode_with_constraints() {
             192, 128, 16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224,
             116, 101, 115, 116, 105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1,
         ]
+    );
+    let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
+    assert_eq!(
+        encoded[constraints_length_byte_cursor],
+        (constraints.len() as u8 - 1).swap_bits()
     );
 }
 
@@ -254,6 +263,20 @@ fn it_works_decode_with_constraints() {
     ];
     let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
+
+    if let Some(constraints) = &c
+        .get_module("module_test")
+        .expect("module exists")
+        .get_method("method_test")
+        .expect("method exists")
+        .constraints
+    {
+        let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
+        assert_eq!(
+            encoded[constraints_length_byte_cursor].swap_bits() + 1,
+            constraints.len() as u8,
+        );
+    };
 }
 
 #[test]
