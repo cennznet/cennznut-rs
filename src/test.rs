@@ -264,19 +264,33 @@ fn it_works_decode_with_constraints() {
     let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
 
-    if let Some(constraints) = &c
+    let method = &c
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
-        .expect("method exists")
-        .constraints
-    {
+        .expect("method exists");
+
+    if let Some(constraints) = &method.constraints {
         let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
         assert_eq!(
             encoded[constraints_length_byte_cursor].swap_bits() + 1,
             constraints.len() as u8,
         );
     };
+
+    if let Some(contract) = method.clone().get_pact() {
+        assert_eq!(
+            contract,
+            Contract {
+                data_table: DataTable::new(vec![
+                    PactType::Numeric(Numeric(111)),
+                    PactType::Numeric(Numeric(333)),
+                    PactType::StringLike(StringLike(b"testing")),
+                ]),
+                bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
+            }
+        );
+    }
 }
 
 #[test]
