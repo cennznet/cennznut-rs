@@ -58,7 +58,7 @@ impl Encode for Method {
         }
 
         if let Some(constraints) = &self.constraints {
-            buf.push_byte((constraints.len() as u8).swap_bits());
+            buf.push_byte(((constraints.len() as u8) - 1).swap_bits());
             buf.write(&constraints);
         }
     }
@@ -234,7 +234,7 @@ impl Decode for Method {
 
         let mut constraints: Option<Vec<u8>> = None;
         if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
-            let constraints_length = input.read_byte()?.swap_bits();
+            let constraints_length = (input.read_byte()?.swap_bits()) + 1;
             let mut constraints_buf: Vec<u8> = Default::default();
             for _ in 0..constraints_length {
                 constraints_buf.push(input.read_byte()?);
