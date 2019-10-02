@@ -39,7 +39,7 @@ fn it_works_encode() {
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         ]
     );
-    assert_eq!(encoded[2], 0); // 1 module encoded as 0
+    assert_eq!(encoded[2], 0); // 1 module encodes to 0
 }
 
 #[test]
