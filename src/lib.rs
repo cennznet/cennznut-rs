@@ -36,6 +36,8 @@ impl Method {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
                 Ok(contract) => Some(contract),
+                // This error case can only occur after initializing a Method with bad constraints.
+                // A decoded Method will be checked during decoding.
                 Err(_) => None,
             },
             None => None,
