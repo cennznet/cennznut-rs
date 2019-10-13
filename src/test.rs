@@ -264,13 +264,13 @@ fn it_works_decode_with_constraints() {
     let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
 
-    if let Some(constraints) = &c
+    let method = &c
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
-        .expect("method exists")
-        .constraints
-    {
+        .expect("method exists");
+
+    if let Some(constraints) = &method.constraints {
         let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
         assert_eq!(
             encoded[constraints_length_byte_cursor].swap_bits() + 1,
@@ -390,4 +390,57 @@ fn it_works_with_validation() {
         cennznut.validate(&module.name, "method_test2"),
         Err("CENNZnut does not grant permission for method")
     );
+}
+
+#[test]
+fn it_works_get_pact() {
+    // A CENNZnut with constraints set
+    let encoded_with: Vec<u8> = vec![
+        0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128, 16,
+        246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
+        105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1,
+    ];
+
+    let cennznut_with: CENNZnutV0 = Decode::decode(&mut &encoded_with[..]).expect("it works");
+
+    let contract_with = cennznut_with
+        .get_module("module_test")
+        .expect("module exists")
+        .get_method("method_test")
+        .expect("method exists")
+        .get_pact();
+
+    if let Some(contract) = contract_with {
+        assert_eq!(
+            contract,
+            Contract {
+                data_table: DataTable::new(vec![
+                    PactType::Numeric(Numeric(111)),
+                    PactType::Numeric(Numeric(333)),
+                    PactType::StringLike(StringLike(b"testing")),
+                ]),
+                bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
+            }
+        );
+    }
+
+    // A CENNZnut without constraints set
+    let encoded_without: Vec<u8> = vec![
+        0, 0, 0, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ];
+
+    let cennznut_without: CENNZnutV0 = Decode::decode(&mut &encoded_without[..]).expect("it works");
+
+    let contract_without = cennznut_without
+        .get_module("module_test")
+        .expect("module exists")
+        .get_method("method_test")
+        .expect("method exists")
+        .get_pact();
+
+    assert_eq!(contract_without, None);
 }

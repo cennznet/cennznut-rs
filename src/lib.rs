@@ -31,6 +31,20 @@ pub trait Validate {
     }
 }
 
+impl Method {
+    pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
+        match &self.constraints {
+            Some(constraints) => match Contract::decode(constraints) {
+                Ok(contract) => Some(contract),
+                // This error case can only occur after initializing a Method with bad constraints.
+                // A decoded Method will be checked during decoding.
+                Err(_) => None,
+            },
+            None => None,
+        }
+    }
+}
+
 impl Encode for Method {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
