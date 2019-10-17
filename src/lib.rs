@@ -26,9 +26,7 @@ pub struct Method {
 }
 
 pub trait Validate {
-    fn validate(&self, module: &str, method: &str) -> Result<(), &'static str> {
-        Ok(())
-    }
+    fn validate(&self, module: &str, method: &str) -> Result<(), &'static str>;
 }
 
 impl Method {
