@@ -191,9 +191,12 @@ impl Validate for CENNZnutV0 {
             .get_method(method_name)
             .ok_or_else(|| "CENNZnut does not grant permission for method")?;
         if let Some(contract) = method.get_pact() {
-            interpret(args, contract.data_table.as_ref(), &contract.bytecode)
-                .map(|_| ())
-                .map_err(|_| "CENNZnut does not grant permission for method arguments")?
+            match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
+                Ok(true) => {}
+                Ok(false) | Err(_) => {
+                    return Err("CENNZnut does not grant permission for method arguments")
+                }
+            }
         }
         Ok(())
     }
