@@ -30,6 +30,7 @@ pub trait Validate {
 }
 
 impl Method {
+    /// Returns the Pact contract, if it exists in the Method
     pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
@@ -175,6 +176,8 @@ impl Decode for CENNZnutV0 {
 }
 
 impl Validate for CENNZnutV0 {
+    /// Validates a CENNZnut by (1) looking for module_name and method_name and (2) executing the
+    /// Pact interpreter if constraints exist
     fn validate(
         &self,
         module_name: &str,
