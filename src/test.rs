@@ -429,10 +429,7 @@ fn it_works_with_validation() {
             PactType::StringLike(StringLike(b"test")),
         ];
 
-        assert_eq!(
-            cennznut.validate(&module.name, &method.name, &args),
-            Err("CENNZnut does not grant permission for constraints")
-        );
+        assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
     }
 
     // Test for uninterpretable operations: Err(InterpErr::BadTypeOperation)

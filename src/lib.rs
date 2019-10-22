@@ -181,23 +181,18 @@ impl Validate for CENNZnutV0 {
         method_name: &str,
         args: &[PactType],
     ) -> Result<(), &'static str> {
-        self.get_module(module_name)
-            .ok_or("CENNZnut does not grant permission for module")
-            .and_then(|module| {
-                module
-                    .get_method(method_name)
-                    .ok_or("CENNZnut does not grant permission for method")
-            })
-            .and_then(|method| {
-                method
-                    .get_pact()
-                    .ok_or("CENNZnut does not grant permission for constraints")
-                    .and_then(|contract| {
-                        interpret(args, contract.data_table.as_ref(), &contract.bytecode)
-                            .map(|_| ())
-                            .map_err(|_| "CENNZnut does not grant permission for method arguments")
-                    })
-            })
+        let module = self
+            .get_module(module_name)
+            .ok_or_else(|| "CENNZnut does not grant permission for module")?;
+        let method = module
+            .get_method(method_name)
+            .ok_or_else(|| "CENNZnut does not grant permission for method")?;
+        if let Some(contract) = method.get_pact() {
+            interpret(args, contract.data_table.as_ref(), &contract.bytecode)
+                .map(|_| ())
+                .map_err(|_| "CENNZnut does not grant permission for method arguments")?
+        }
+        Ok(())
     }
 }
 
