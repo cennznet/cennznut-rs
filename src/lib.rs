@@ -191,11 +191,11 @@ impl Validate for CENNZnutV0 {
             .and_then(|method| {
                 method
                     .get_pact()
-                    .ok_or("CENNZnut does not grant permission for method arguments")
+                    .ok_or("CENNZnut does not grant permission for constraints")
                     .and_then(|contract| {
                         interpret(args, contract.data_table.as_ref(), &contract.bytecode)
                             .map(|_| ())
-                            .map_err(|_| "Method arguments cannot be interpretted")
+                            .map_err(|_| "CENNZnut does not grant permission for method arguments")
                     })
             })
     }
