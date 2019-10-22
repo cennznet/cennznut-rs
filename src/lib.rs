@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![warn(clippy::pedantic)]
 
 #[cfg(not(feature = "std"))]
@@ -14,6 +13,7 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::compiler::Contract;
+use pact::interpreter::{interpret, types::PactType};
 
 mod test;
 
@@ -26,7 +26,7 @@ pub struct Method {
 }
 
 pub trait Validate {
-    fn validate(&self, module: &str, method: &str) -> Result<(), &'static str>;
+    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), &'static str>;
 }
 
 impl Method {
@@ -175,14 +175,29 @@ impl Decode for CENNZnutV0 {
 }
 
 impl Validate for CENNZnutV0 {
-    fn validate(&self, module_name: &str, method_name: &str) -> Result<(), &'static str> {
-        let module = self
-            .get_module(module_name)
-            .ok_or("CENNZnut does not grant permission for module")?;
-        module
-            .get_method(method_name)
-            .map(|_| ())
-            .ok_or("CENNZnut does not grant permission for method")
+    fn validate(
+        &self,
+        module_name: &str,
+        method_name: &str,
+        args: &[PactType],
+    ) -> Result<(), &'static str> {
+        self.get_module(module_name)
+            .ok_or("CENNZnut does not grant permission for module")
+            .and_then(|module| {
+                module
+                    .get_method(method_name)
+                    .ok_or("CENNZnut does not grant permission for method")
+            })
+            .and_then(|method| {
+                method
+                    .get_pact()
+                    .ok_or("CENNZnut does not grant permission for method arguments")
+                    .and_then(|contract| {
+                        interpret(args, contract.data_table.as_ref(), &contract.bytecode)
+                            .map(|_| ())
+                            .map_err(|_| "Method arguments cannot be interpretted")
+                    })
+            })
     }
 }
 
