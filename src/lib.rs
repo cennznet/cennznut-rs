@@ -193,7 +193,8 @@ impl Validate for CENNZnutV0 {
         if let Some(contract) = method.get_pact() {
             match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
                 Ok(true) => {}
-                Ok(false) | Err(_) => {
+                Ok(false) => return Err("CENNZnut does not grant permission for method arguments"),
+                Err(_) => return Err("error while interpreting constraints"),
                     return Err("CENNZnut does not grant permission for method arguments")
                 }
             }
