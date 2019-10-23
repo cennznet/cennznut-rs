@@ -195,8 +195,6 @@ impl Validate for CENNZnutV0 {
                 Ok(true) => {}
                 Ok(false) => return Err("CENNZnut does not grant permission for method arguments"),
                 Err(_) => return Err("error while interpreting constraints"),
-                    return Err("CENNZnut does not grant permission for method arguments")
-                }
             }
         }
         Ok(())
