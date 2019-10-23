@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
 #![warn(clippy::pedantic)]
 
 #[cfg(not(feature = "std"))]
@@ -14,6 +13,7 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::compiler::Contract;
+use pact::interpreter::{interpret, types::PactType};
 
 mod test;
 
@@ -26,10 +26,11 @@ pub struct Method {
 }
 
 pub trait Validate {
-    fn validate(&self, module: &str, method: &str) -> Result<(), &'static str>;
+    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), &'static str>;
 }
 
 impl Method {
+    /// Returns the Pact contract, if it exists in the Method
     pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
@@ -175,14 +176,28 @@ impl Decode for CENNZnutV0 {
 }
 
 impl Validate for CENNZnutV0 {
-    fn validate(&self, module_name: &str, method_name: &str) -> Result<(), &'static str> {
+    /// Validates a CENNZnut by (1) looking for module_name and method_name and (2) executing the
+    /// Pact interpreter if constraints exist
+    fn validate(
+        &self,
+        module_name: &str,
+        method_name: &str,
+        args: &[PactType],
+    ) -> Result<(), &'static str> {
         let module = self
             .get_module(module_name)
-            .ok_or("CENNZnut does not grant permission for module")?;
-        module
+            .ok_or_else(|| "CENNZnut does not grant permission for module")?;
+        let method = module
             .get_method(method_name)
-            .map(|_| ())
-            .ok_or("CENNZnut does not grant permission for method")
+            .ok_or_else(|| "CENNZnut does not grant permission for method")?;
+        if let Some(contract) = method.get_pact() {
+            match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
+                Ok(true) => {}
+                Ok(false) => return Err("CENNZnut does not grant permission for method arguments"),
+                Err(_) => return Err("error while interpreting constraints"),
+            }
+        }
+        Ok(())
     }
 }
 
