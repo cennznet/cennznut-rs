@@ -35,15 +35,25 @@ fn init_module(
     }
 }
 
+fn config_methods(method: &Method) -> Vec<(String, Method)> {
+    let mut methods: Vec<(String, Method)> = Default::default();
+    methods.push((method.name.clone(), method.clone()));
+    methods
+}
+
+fn config_modules(module: &Module) -> Vec<(String, Module)> {
+    let mut modules: Vec<(String, Module)> = Default::default();
+    modules.push((module.name.clone(), module.clone()));
+    modules
+}
+
 #[test]
 fn it_works_encode() {
     let method = init_method("method_test", None, None);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", None, methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -62,12 +72,10 @@ fn it_works_encode() {
 #[test]
 fn it_works_encode_one_module() {
     let method = init_method("method_test", None, None);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", None, methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -96,12 +104,10 @@ fn it_works_decode() {
 #[test]
 fn it_works_encode_with_module_cooldown() {
     let method = init_method("method_test", None, None);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", Some(86_400), methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -135,12 +141,10 @@ fn it_works_decode_with_module_cooldown() {
 #[test]
 fn it_works_encode_with_method_cooldown() {
     let method = init_method("method_test", Some(123), None);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", Some(86_400), methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -206,12 +210,10 @@ fn it_works_encode_with_constraints() {
     contract.encode(&mut constraints);
     
     let method = init_method("method_test", None, Some(constraints.clone()),);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", None, methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -328,12 +330,10 @@ fn it_works_with_lots_of_things_codec() {
 #[test]
 fn it_works_with_validation() {
     let method = init_method("method_test", Some(123), None);
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let methods = config_methods(&method);
 
     let module = init_module("module_test", Some(86_400), methods);
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
