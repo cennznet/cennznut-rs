@@ -9,22 +9,39 @@ use pact::types::{Numeric, PactType, StringLike};
 use std::string::{String, ToString};
 use std::vec::Vec;
 
+fn init_method(
+    name: &str, 
+    block_cooldown: Option<u32>,
+    constraints:  Option<Vec<u8>>
+) -> Method 
+{
+    Method {
+        name: name.to_string(),
+        block_cooldown,
+        constraints
+    }
+}
+
+fn init_module(
+    name: &str,
+    block_cooldown: Option<u32>,
+    methods: Vec<(String, Method)>
+) -> Module 
+{
+    Module {
+        name: name.to_string(),
+        block_cooldown,
+        methods,
+    }
+}
+
 #[test]
 fn it_works_encode() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
+    let method = init_method("method_test", None, None);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
+    let module = init_module("module_test", None, methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
@@ -44,20 +61,11 @@ fn it_works_encode() {
 
 #[test]
 fn it_works_encode_one_module() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
+    let method = init_method("method_test", None, None);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
+    let module = init_module("module_test", None, methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
@@ -87,20 +95,11 @@ fn it_works_decode() {
 
 #[test]
 fn it_works_encode_with_module_cooldown() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
+    let method = init_method("method_test", None, None);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods,
-    };
-
+    let module = init_module("module_test", Some(86_400), methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
@@ -135,20 +134,11 @@ fn it_works_decode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_method_cooldown() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
+    let method = init_method("method_test", Some(123), None);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods,
-    };
-
+    let module = init_module("module_test", Some(86_400), methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
@@ -214,21 +204,12 @@ fn it_works_encode_with_constraints() {
     };
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
-
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: Some(constraints.clone()),
-    };
+    
+    let method = init_method("method_test", None, Some(constraints.clone()),);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
+    let module = init_module("module_test", None, methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
@@ -311,32 +292,16 @@ fn it_works_decode_with_valid_constraints() {
 
 #[test]
 fn it_works_with_lots_of_things_codec() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
-    let method2 = Method {
-        name: "method_test2".to_string(),
-        block_cooldown: Some(321),
-        constraints: None,
-    };
+    
+    let method = init_method("method_test", Some(123), None);
+    let method2 = init_method("method_test2", Some(321), None);
 
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
     methods.push((method2.name.clone(), method2.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-
-    let module2 = Module {
-        name: "module_test2".to_string(),
-        block_cooldown: Some(55_555),
-        methods: methods,
-    };
+    let module = init_module("module_test", Some(86_400), methods.clone());
+    let module2 = init_module("module_test2", Some(55_555), methods.clone());
 
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
@@ -362,20 +327,11 @@ fn it_works_with_lots_of_things_codec() {
 
 #[test]
 fn it_works_with_validation() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
-
+    let method = init_method("method_test", Some(123), None);
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
+    let module = init_module("module_test", Some(86_400), methods);
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
 
