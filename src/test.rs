@@ -9,25 +9,15 @@ use pact::types::{Numeric, PactType, StringLike};
 use std::string::{String, ToString};
 use std::vec::Vec;
 
-fn init_method(
-    name: &str, 
-    block_cooldown: Option<u32>,
-    constraints:  Option<Vec<u8>>
-) -> Method 
-{
+fn init_method(name: &str, block_cooldown: Option<u32>, constraints: Option<Vec<u8>>) -> Method {
     Method {
         name: name.to_string(),
         block_cooldown,
-        constraints
+        constraints,
     }
 }
 
-fn init_module(
-    name: &str,
-    block_cooldown: Option<u32>,
-    methods: Vec<(String, Method)>
-) -> Module 
-{
+fn init_module(name: &str, block_cooldown: Option<u32>, methods: Vec<(String, Method)>) -> Module {
     Module {
         name: name.to_string(),
         block_cooldown,
@@ -208,8 +198,8 @@ fn it_works_encode_with_constraints() {
     };
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
-    
-    let method = init_method("method_test", None, Some(constraints.clone()),);
+
+    let method = init_method("method_test", None, Some(constraints.clone()));
     let methods = config_methods(&method);
 
     let module = init_module("module_test", None, methods);
@@ -294,7 +284,6 @@ fn it_works_decode_with_valid_constraints() {
 
 #[test]
 fn it_works_with_lots_of_things_codec() {
-    
     let method = init_method("method_test", Some(123), None);
     let method2 = init_method("method_test2", Some(321), None);
 
