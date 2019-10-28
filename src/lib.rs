@@ -30,6 +30,14 @@ pub trait Validate {
 }
 
 impl Method {
+    pub fn init(name: &str, block_cooldown: Option<u32>, constraints: Option<Vec<u8>>) -> Method {
+        Self {
+            name: name.to_string(),
+            block_cooldown,
+            constraints,
+        }
+    }
+
     /// Returns the Pact contract, if it exists in the Method
     pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
         match &self.constraints {
@@ -86,6 +94,14 @@ pub struct Module {
 }
 
 impl Module {
+    pub fn init(name: &str, block_cooldown: Option<u32>, methods: Vec<(String, Method)>) -> Module {
+        Self {
+            name: name.to_string(),
+            block_cooldown,
+            methods,
+        }
+    }
+
     /// Returns the method, if it exists in the Module
     pub fn get_method(&self, method: &str) -> Option<&Method> {
         for (name, m) in self.methods.iter() {
