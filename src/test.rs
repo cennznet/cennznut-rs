@@ -26,7 +26,7 @@ fn it_works_encode() {
     let method = Method::new("method_test");
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", None, methods);
+    let module = Module::new("module_test").methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -48,7 +48,7 @@ fn it_works_encode_one_module() {
     let method = Method::new("method_test");
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", None, methods);
+    let module = Module::new("module_test").methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -80,7 +80,9 @@ fn it_works_encode_with_module_cooldown() {
     let method = Method::new("method_test");
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods);
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -117,7 +119,9 @@ fn it_works_encode_with_method_cooldown() {
     let method = Method::new("method_test").block_cooldown(123);
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods);
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -183,7 +187,7 @@ fn it_works_encode_with_constraints() {
     let method = Method::new("method_test").constraints(constraints.clone());
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", None, methods);
+    let module = Module::new("module_test").methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -272,8 +276,12 @@ fn it_works_with_lots_of_things_codec() {
     methods.push((method.name.clone(), method.clone()));
     methods.push((method2.name.clone(), method2.clone()));
 
-    let module = Module::new("module_test", Some(86_400), methods.clone());
-    let module2 = Module::new("module_test2", Some(55_555), methods.clone());
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods.clone());
+    let module2 = Module::new("module_test2")
+        .block_cooldown(55_555)
+        .methods(methods.clone());
 
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
@@ -314,7 +322,9 @@ fn it_validates() {
         .constraints(constraints.clone());
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods);
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -348,7 +358,9 @@ fn it_validates_error_with_bad_bytecode() {
         .constraints(constraints.clone());
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
@@ -377,7 +389,9 @@ fn it_validates_error_with_false_constraints() {
         .constraints(constraints.clone());
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
@@ -397,7 +411,9 @@ fn it_validates_with_empty_constraints() {
     let method = Method::new("method_test").block_cooldown(123);
     let methods = config_methods(&method);
 
-    let module = Module::new("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };

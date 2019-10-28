@@ -104,12 +104,22 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn new(name: &str, block_cooldown: Option<u32>, methods: Vec<(String, Method)>) -> Module {
+    pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            block_cooldown,
-            methods,
+            block_cooldown: None,
+            methods: Vec::new(),
         }
+    }
+
+    pub fn block_cooldown(mut self, block_cooldown: u32) -> Self {
+        self.block_cooldown = Some(block_cooldown);
+        self
+    }
+
+    pub fn methods(mut self, methods: Vec<(String, Method)>) -> Self {
+        self.methods = methods;
+        self
     }
 
     /// Returns the method, if it exists in the Module
