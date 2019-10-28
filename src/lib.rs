@@ -30,12 +30,22 @@ pub trait Validate {
 }
 
 impl Method {
-    pub fn new(name: &str, block_cooldown: Option<u32>, constraints: Option<Vec<u8>>) -> Method {
+    pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
-            block_cooldown,
-            constraints,
+            block_cooldown: None,
+            constraints: None,
         }
+    }
+
+    pub fn block_cooldown(mut self, block_cooldown: u32) -> Self {
+        self.block_cooldown = Some(block_cooldown);
+        self
+    }
+
+    pub fn constraints(mut self, constraints: Vec<u8>) -> Self {
+        self.constraints = Some(constraints);
+        self
     }
 
     /// Returns the Pact contract, if it exists in the Method

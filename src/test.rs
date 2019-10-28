@@ -6,7 +6,7 @@ use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
 use pact::interpreter::OpCode;
 use pact::types::{Numeric, PactType, StringLike};
-use std::string::{String};
+use std::string::String;
 use std::vec::Vec;
 
 fn config_methods(method: &Method) -> Vec<(String, Method)> {
@@ -23,7 +23,7 @@ fn config_modules(module: &Module) -> Vec<(String, Module)> {
 
 #[test]
 fn it_works_encode() {
-    let method = Method::new("method_test", None, None);
+    let method = Method::new("method_test");
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", None, methods);
@@ -45,7 +45,7 @@ fn it_works_encode() {
 
 #[test]
 fn it_works_encode_one_module() {
-    let method = Method::new("method_test", None, None);
+    let method = Method::new("method_test");
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", None, methods);
@@ -77,7 +77,7 @@ fn it_works_decode() {
 
 #[test]
 fn it_works_encode_with_module_cooldown() {
-    let method = Method::new("method_test", None, None);
+    let method = Method::new("method_test");
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods);
@@ -114,7 +114,7 @@ fn it_works_decode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_method_cooldown() {
-    let method = Method::new("method_test", Some(123), None);
+    let method = Method::new("method_test").block_cooldown(123);
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods);
@@ -180,7 +180,7 @@ fn it_works_encode_with_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::new("method_test", None, Some(constraints.clone()));
+    let method = Method::new("method_test").constraints(constraints.clone());
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", None, methods);
@@ -265,8 +265,8 @@ fn it_works_decode_with_valid_constraints() {
 
 #[test]
 fn it_works_with_lots_of_things_codec() {
-    let method = Method::new("method_test", Some(123), None);
-    let method2 = Method::new("method_test2", Some(321), None);
+    let method = Method::new("method_test").block_cooldown(123);
+    let method2 = Method::new("method_test2").block_cooldown(321);
 
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
@@ -309,7 +309,9 @@ fn it_validates() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods);
@@ -341,7 +343,9 @@ fn it_validates_error_with_bad_bytecode() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods.clone());
@@ -368,7 +372,9 @@ fn it_validates_error_with_false_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods.clone());
@@ -388,7 +394,7 @@ fn it_validates_error_with_false_constraints() {
 
 #[test]
 fn it_validates_with_empty_constraints() {
-    let method = Method::new("method_test", Some(123), None);
+    let method = Method::new("method_test").block_cooldown(123);
     let methods = config_methods(&method);
 
     let module = Module::new("module_test", Some(86_400), methods.clone());
