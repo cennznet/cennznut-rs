@@ -175,15 +175,12 @@ fn it_works_decode_with_method_cooldown() {
 }
 
 #[test]
-#[should_panic(expected = "expected version : 0")]
 fn it_works_decode_with_version_0() {
-    let encoded: Vec<u8> = vec![
-        1, 2, 3, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111, 100,
-        95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
-        0, 0, 0,
-    ];
-    CENNZnutV0::decode(&mut &encoded[..]).unwrap();
+    let encoded: Vec<u8> = vec![1, 2, 3, 192];
+    assert_eq!(
+        CENNZnutV0::decode(&mut &encoded[..]),
+        Err(codec::Error::from("expected version : 0"))
+    );
 }
 
 #[test]
@@ -317,24 +314,109 @@ fn it_works_with_lots_of_things_codec() {
 }
 
 #[test]
-fn it_works_with_validation() {
-    let method = init_method("method_test", Some(123), None);
+fn it_validates() {
+    let contract = Contract {
+        data_table: DataTable::new(vec![
+            PactType::Numeric(Numeric(123)),
+            PactType::StringLike(StringLike(b"test")),
+        ]),
+        bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
+    };
+    let mut constraints: Vec<u8> = Vec::new();
+    contract.encode(&mut constraints);
+
+    let method = init_method("method_test", Some(123), Some(constraints.clone()));
     let methods = config_methods(&method);
 
     let module = init_module("module_test", Some(86_400), methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
+    let args = [
+        PactType::Numeric(Numeric(123)),
+        PactType::StringLike(StringLike(b"test")),
+    ];
 
-    assert_eq!(cennznut.validate(&module.name, &method.name), Ok(()));
+    assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
     assert_eq!(
-        cennznut.validate("module_test2", &method.name),
+        cennznut.validate("module_test2", &method.name, &args),
         Err("CENNZnut does not grant permission for module")
     );
     assert_eq!(
-        cennznut.validate(&module.name, "method_test2"),
+        cennznut.validate(&module.name, "method_test2", &args),
         Err("CENNZnut does not grant permission for method")
     );
+}
+
+#[test]
+fn it_validates_error_with_bad_bytecode() {
+    let contract = Contract {
+        data_table: DataTable::new(vec![PactType::StringLike(StringLike(b"test"))]),
+        bytecode: [OpCode::GT.into(), 0, 0, 1, 0].to_vec(),
+    };
+    let mut constraints: Vec<u8> = Vec::new();
+    contract.encode(&mut constraints);
+
+    let method = init_method("method_test", Some(123), Some(constraints.clone()));
+    let methods = config_methods(&method);
+
+    let module = init_module("module_test", Some(86_400), methods.clone());
+    let modules = config_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules: modules };
+    let args = [PactType::StringLike(StringLike(b"test"))];
+
+    assert_eq!(
+        cennznut.validate(&module.name, &method.name, &args),
+        Err("error while interpreting constraints")
+    );
+}
+
+#[test]
+fn it_validates_error_with_false_constraints() {
+    let contract = Contract {
+        data_table: DataTable::new(vec![
+            PactType::Numeric(Numeric(123)),
+            PactType::StringLike(StringLike(b"a")),
+        ]),
+        bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
+    };
+    let mut constraints: Vec<u8> = Vec::new();
+    contract.encode(&mut constraints);
+
+    let method = init_method("method_test", Some(123), Some(constraints.clone()));
+    let methods = config_methods(&method);
+
+    let module = init_module("module_test", Some(86_400), methods.clone());
+    let modules = config_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules: modules };
+    let args = [
+        PactType::Numeric(Numeric(321)),
+        PactType::StringLike(StringLike(b"b")),
+    ];
+
+    assert_eq!(
+        cennznut.validate(&module.name, &method.name, &args),
+        Err("CENNZnut does not grant permission for method arguments")
+    );
+}
+
+#[test]
+fn it_validates_with_empty_constraints() {
+    let method = init_method("method_test", Some(123), None);
+    let methods = config_methods(&method);
+
+    let module = init_module("module_test", Some(86_400), methods.clone());
+    let modules = config_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules: modules };
+    let args = [
+        PactType::Numeric(Numeric(0)),
+        PactType::StringLike(StringLike(b"test")),
+    ];
+
+    assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
 }
 
 #[test]
