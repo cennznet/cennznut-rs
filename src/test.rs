@@ -23,10 +23,10 @@ fn config_modules(module: &Module) -> Vec<(String, Module)> {
 
 #[test]
 fn it_works_encode() {
-    let method = Method::init("method_test", None, None);
+    let method = Method::new("method_test", None, None);
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", None, methods);
+    let module = Module::new("module_test", None, methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -45,10 +45,10 @@ fn it_works_encode() {
 
 #[test]
 fn it_works_encode_one_module() {
-    let method = Method::init("method_test", None, None);
+    let method = Method::new("method_test", None, None);
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", None, methods);
+    let module = Module::new("module_test", None, methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -77,10 +77,10 @@ fn it_works_decode() {
 
 #[test]
 fn it_works_encode_with_module_cooldown() {
-    let method = Method::init("method_test", None, None);
+    let method = Method::new("method_test", None, None);
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods);
+    let module = Module::new("module_test", Some(86_400), methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -114,10 +114,10 @@ fn it_works_decode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_method_cooldown() {
-    let method = Method::init("method_test", Some(123), None);
+    let method = Method::new("method_test", Some(123), None);
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods);
+    let module = Module::new("module_test", Some(86_400), methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -180,10 +180,10 @@ fn it_works_encode_with_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::init("method_test", None, Some(constraints.clone()));
+    let method = Method::new("method_test", None, Some(constraints.clone()));
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", None, methods);
+    let module = Module::new("module_test", None, methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -265,15 +265,15 @@ fn it_works_decode_with_valid_constraints() {
 
 #[test]
 fn it_works_with_lots_of_things_codec() {
-    let method = Method::init("method_test", Some(123), None);
-    let method2 = Method::init("method_test2", Some(321), None);
+    let method = Method::new("method_test", Some(123), None);
+    let method2 = Method::new("method_test2", Some(321), None);
 
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
     methods.push((method2.name.clone(), method2.clone()));
 
-    let module = Module::init("module_test", Some(86_400), methods.clone());
-    let module2 = Module::init("module_test2", Some(55_555), methods.clone());
+    let module = Module::new("module_test", Some(86_400), methods.clone());
+    let module2 = Module::new("module_test2", Some(55_555), methods.clone());
 
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
@@ -309,10 +309,10 @@ fn it_validates() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::init("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods);
+    let module = Module::new("module_test", Some(86_400), methods);
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -341,10 +341,10 @@ fn it_validates_error_with_bad_bytecode() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::init("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test", Some(86_400), methods.clone());
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
@@ -368,10 +368,10 @@ fn it_validates_error_with_false_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method::init("method_test", Some(123), Some(constraints.clone()));
+    let method = Method::new("method_test", Some(123), Some(constraints.clone()));
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test", Some(86_400), methods.clone());
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
@@ -388,10 +388,10 @@ fn it_validates_error_with_false_constraints() {
 
 #[test]
 fn it_validates_with_empty_constraints() {
-    let method = Method::init("method_test", Some(123), None);
+    let method = Method::new("method_test", Some(123), None);
     let methods = config_methods(&method);
 
-    let module = Module::init("module_test", Some(86_400), methods.clone());
+    let module = Module::new("module_test", Some(86_400), methods.clone());
     let modules = config_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
