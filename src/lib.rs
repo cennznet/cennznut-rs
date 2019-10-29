@@ -58,7 +58,7 @@ impl Encode for Method {
         };
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
-        let mut name = [0u8; 32];
+        let mut name = [0_u8; 32];
         for i in 0..self.name.len() {
             name[i] = self.name.as_bytes()[i];
         }
@@ -104,7 +104,7 @@ impl Encode for Module {
             method_count_and_has_cooldown_byte |= 0b0000_0001;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
-        let mut name = [0u8; 32];
+        let mut name = [0_u8; 32];
         for i in 0..self.name.len() {
             name[i] = self.name.as_bytes()[i];
         }
@@ -147,7 +147,7 @@ impl Encode for CENNZnutV0 {
         let module_count = ((self.modules.len() as u8) - 1).swap_bits();
         buf.push_byte(module_count);
 
-        for (_, module) in self.modules.iter() {
+        for (_, module) in &self.modules {
             module.encode_to(buf);
         }
     }
