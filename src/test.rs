@@ -9,13 +9,13 @@ use pact::types::{Numeric, PactType, StringLike};
 use std::string::String;
 use std::vec::Vec;
 
-fn config_methods(method: &Method) -> Vec<(String, Method)> {
+fn make_methods(method: &Method) -> Vec<(String, Method)> {
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
     methods
 }
 
-fn config_modules(module: &Module) -> Vec<(String, Module)> {
+fn make_modules(module: &Module) -> Vec<(String, Module)> {
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
     modules
@@ -24,10 +24,10 @@ fn config_modules(module: &Module) -> Vec<(String, Module)> {
 #[test]
 fn it_works_encode() {
     let method = Method::new("method_test");
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test").methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -46,10 +46,10 @@ fn it_works_encode() {
 #[test]
 fn it_works_encode_one_module() {
     let method = Method::new("method_test");
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test").methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -78,12 +78,12 @@ fn it_works_decode() {
 #[test]
 fn it_works_encode_with_module_cooldown() {
     let method = Method::new("method_test");
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -117,12 +117,12 @@ fn it_works_decode_with_module_cooldown() {
 #[test]
 fn it_works_encode_with_method_cooldown() {
     let method = Method::new("method_test").block_cooldown(123);
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -185,10 +185,10 @@ fn it_works_encode_with_constraints() {
     contract.encode(&mut constraints);
 
     let method = Method::new("method_test").constraints(constraints.clone());
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test").methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -320,12 +320,12 @@ fn it_validates() {
     let method = Method::new("method_test")
         .block_cooldown(123)
         .constraints(constraints.clone());
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let args = [
@@ -356,12 +356,12 @@ fn it_validates_error_with_bad_bytecode() {
     let method = Method::new("method_test")
         .block_cooldown(123)
         .constraints(constraints.clone());
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [PactType::StringLike(StringLike(b"test"))];
@@ -387,12 +387,12 @@ fn it_validates_error_with_false_constraints() {
     let method = Method::new("method_test")
         .block_cooldown(123)
         .constraints(constraints.clone());
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [
@@ -409,12 +409,12 @@ fn it_validates_error_with_false_constraints() {
 #[test]
 fn it_validates_with_empty_constraints() {
     let method = Method::new("method_test").block_cooldown(123);
-    let methods = config_methods(&method);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods);
-    let modules = config_modules(&module);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [
