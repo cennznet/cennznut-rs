@@ -6,27 +6,28 @@ use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
 use pact::interpreter::OpCode;
 use pact::types::{Numeric, PactType, StringLike};
-use std::string::{String, ToString};
+use std::string::String;
 use std::vec::Vec;
+
+fn make_methods(method: &Method) -> Vec<(String, Method)> {
+    let mut methods: Vec<(String, Method)> = Default::default();
+    methods.push((method.name.clone(), method.clone()));
+    methods
+}
+
+fn make_modules(module: &Module) -> Vec<(String, Module)> {
+    let mut modules: Vec<(String, Module)> = Default::default();
+    modules.push((module.name.clone(), module.clone()));
+    modules
+}
 
 #[test]
 fn it_works_encode() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let method = Method::new("method_test");
+    let methods = make_methods(&method);
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test").methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -44,22 +45,11 @@ fn it_works_encode() {
 
 #[test]
 fn it_works_encode_one_module() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let method = Method::new("method_test");
+    let methods = make_methods(&method);
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test").methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -87,22 +77,13 @@ fn it_works_decode() {
 
 #[test]
 fn it_works_encode_with_module_cooldown() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: None,
-    };
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let method = Method::new("method_test");
+    let methods = make_methods(&method);
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods,
-    };
-
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -135,22 +116,13 @@ fn it_works_decode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_method_cooldown() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let method = Method::new("method_test").block_cooldown(123);
+    let methods = make_methods(&method);
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods,
-    };
-
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
 
@@ -212,22 +184,11 @@ fn it_works_encode_with_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: None,
-        constraints: Some(constraints.clone()),
-    };
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
+    let method = Method::new("method_test").constraints(constraints.clone());
+    let methods = make_methods(&method);
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: None,
-        methods,
-    };
-
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test").methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let encoded = cennznut.encode();
@@ -308,32 +269,19 @@ fn it_works_decode_with_valid_constraints() {
 
 #[test]
 fn it_works_with_lots_of_things_codec() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
-    let method2 = Method {
-        name: "method_test2".to_string(),
-        block_cooldown: Some(321),
-        constraints: None,
-    };
+    let method = Method::new("method_test").block_cooldown(123);
+    let method2 = Method::new("method_test2").block_cooldown(321);
 
     let mut methods: Vec<(String, Method)> = Default::default();
     methods.push((method.name.clone(), method.clone()));
     methods.push((method2.name.clone(), method2.clone()));
 
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-
-    let module2 = Module {
-        name: "module_test2".to_string(),
-        block_cooldown: Some(55_555),
-        methods: methods,
-    };
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods.clone());
+    let module2 = Module::new("module_test2")
+        .block_cooldown(55_555)
+        .methods(methods.clone());
 
     let mut modules: Vec<(String, Module)> = Default::default();
     modules.push((module.name.clone(), module.clone()));
@@ -369,28 +317,22 @@ fn it_validates() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: Some(constraints.clone()),
-    };
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
+    let methods = make_methods(&method);
 
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
-
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
     let args = [
         PactType::Numeric(Numeric(123)),
         PactType::StringLike(StringLike(b"test")),
     ];
+
     assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
     assert_eq!(
         cennznut.validate("module_test2", &method.name, &args),
@@ -411,22 +353,15 @@ fn it_validates_error_with_bad_bytecode() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: Some(constraints.clone()),
-    };
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
+    let methods = make_methods(&method);
 
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
-
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [PactType::StringLike(StringLike(b"test"))];
@@ -449,22 +384,15 @@ fn it_validates_error_with_false_constraints() {
     let mut constraints: Vec<u8> = Vec::new();
     contract.encode(&mut constraints);
 
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: Some(constraints.clone()),
-    };
+    let method = Method::new("method_test")
+        .block_cooldown(123)
+        .constraints(constraints.clone());
+    let methods = make_methods(&method);
 
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
-
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [
@@ -480,22 +408,13 @@ fn it_validates_error_with_false_constraints() {
 
 #[test]
 fn it_validates_with_empty_constraints() {
-    let method = Method {
-        name: "method_test".to_string(),
-        block_cooldown: Some(123),
-        constraints: None,
-    };
+    let method = Method::new("method_test").block_cooldown(123);
+    let methods = make_methods(&method);
 
-    let mut methods: Vec<(String, Method)> = Default::default();
-    methods.push((method.name.clone(), method.clone()));
-
-    let module = Module {
-        name: "module_test".to_string(),
-        block_cooldown: Some(86_400),
-        methods: methods.clone(),
-    };
-    let mut modules: Vec<(String, Module)> = Default::default();
-    modules.push((module.name.clone(), module.clone()));
+    let module = Module::new("module_test")
+        .block_cooldown(86_400)
+        .methods(methods);
+    let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules: modules };
     let args = [

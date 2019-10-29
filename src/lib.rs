@@ -30,6 +30,24 @@ pub trait Validate {
 }
 
 impl Method {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            block_cooldown: None,
+            constraints: None,
+        }
+    }
+
+    pub fn block_cooldown(mut self, block_cooldown: u32) -> Self {
+        self.block_cooldown = Some(block_cooldown);
+        self
+    }
+
+    pub fn constraints(mut self, constraints: Vec<u8>) -> Self {
+        self.constraints = Some(constraints);
+        self
+    }
+
     /// Returns the Pact contract, if it exists in the Method
     pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
         match &self.constraints {
@@ -86,6 +104,24 @@ pub struct Module {
 }
 
 impl Module {
+    pub fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            block_cooldown: None,
+            methods: Vec::new(),
+        }
+    }
+
+    pub fn block_cooldown(mut self, block_cooldown: u32) -> Self {
+        self.block_cooldown = Some(block_cooldown);
+        self
+    }
+
+    pub fn methods(mut self, methods: Vec<(String, Method)>) -> Self {
+        self.methods = methods;
+        self
+    }
+
     /// Returns the method, if it exists in the Module
     pub fn get_method(&self, method: &str) -> Option<&Method> {
         for (name, m) in self.methods.iter() {
