@@ -17,7 +17,7 @@ use pact::interpreter::{interpret, types::PactType};
 
 mod test;
 
-/// A CENNZnet permission domain module method
+/// A `CENNZnet` permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
     pub name: String,
@@ -95,7 +95,7 @@ impl Encode for Method {
     }
 }
 
-/// A CENNZnet permission domain module
+/// A `CENNZnet` permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
     pub name: String,
@@ -158,7 +158,7 @@ impl Encode for Module {
     }
 }
 
-/// A CENNZnet permission domain struct for embedding in doughnuts
+/// A `CENNZnet` permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(String, Module)>,
