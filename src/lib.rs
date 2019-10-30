@@ -87,6 +87,7 @@ impl Encode for Method {
         }
 
         if let Some(constraints) = &self.constraints {
+            #[allow(clippy::cast_possible_truncation)]
             buf.push_byte(((constraints.len() as u8) - 1).swap_bits());
             buf.write(&constraints);
         }
@@ -133,6 +134,7 @@ impl Module {
 
 impl Encode for Module {
     fn encode_to<T: Output>(&self, buf: &mut T) {
+        #[allow(clippy::cast_possible_truncation)]
         let mut method_count_and_has_cooldown_byte = (self.methods.len() as u8) << 1;
         if self.block_cooldown.is_some() {
             method_count_and_has_cooldown_byte |= 0b0000_0001;
@@ -176,6 +178,7 @@ impl Encode for CENNZnutV0 {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         buf.write(&[0, 0]);
 
+        #[allow(clippy::cast_possible_truncation)]
         let module_count = ((self.modules.len() as u8) - 1).swap_bits();
         buf.push_byte(module_count);
 
