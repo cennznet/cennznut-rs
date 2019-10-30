@@ -77,7 +77,9 @@ impl Encode for Method {
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
         let mut name = [0_u8; 32];
+
         name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+
         buf.write(&name);
 
         if let Some(cooldown) = self.block_cooldown {
@@ -142,6 +144,7 @@ impl Encode for Module {
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
         let mut name = [0_u8; 32];
         name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+
         buf.write(&name);
 
         if let Some(cooldown) = self.block_cooldown {
