@@ -49,7 +49,7 @@ impl Method {
     }
 
     /// Returns the Pact contract, if it exists in the Method
-    pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
+    pub fn get_pact(& self) -> Option<Contract> {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
                 Ok(contract) => Some(contract),
