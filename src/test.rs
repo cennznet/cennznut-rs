@@ -230,7 +230,6 @@ fn it_works_decode_with_constraints() {
         .get_method("method_test")
         .expect("method exists");
 
-    
     if let Some(constraints) = &method.constraints {
         let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
         #[allow(clippy::cast_possible_truncation)]

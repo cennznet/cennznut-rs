@@ -49,7 +49,7 @@ impl Method {
     }
 
     /// Returns the Pact contract, if it exists in the Method
-    pub fn get_pact(& self) -> Option<Contract> {
+    pub fn get_pact(&self) -> Option<Contract> {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
                 Ok(contract) => Some(contract),
@@ -77,7 +77,7 @@ impl Encode for Method {
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
         let mut name = [0_u8; 32];
-        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes()); 
+        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
         buf.write(&name);
 
         if let Some(cooldown) = self.block_cooldown {
@@ -248,16 +248,17 @@ impl Decode for Module {
             .trim_matches(char::from(0))
             .to_string();
 
-        let module_cooldown = if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            Some(u32::from_le_bytes([
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-            ]))
-        } else {
-            None
-        };
+        let module_cooldown =
+            if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+                Some(u32::from_le_bytes([
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                ]))
+            } else {
+                None
+            };
 
         let mut methods: Vec<(String, Method)> = Vec::default();
 
@@ -285,30 +286,32 @@ impl Decode for Method {
             .trim_matches(char::from(0))
             .to_string();
 
-        let block_cooldown: Option<u32> = if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            Some(u32::from_le_bytes([
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-            ]))
-        } else {
-            None
-        };
-
-        let constraints: Option<Vec<u8>> = if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
-            let constraints_length = (input.read_byte()?.swap_bits()) + 1;
-            let mut constraints_buf: Vec<u8> = Vec::default();
-            for _ in 0..constraints_length {
-                constraints_buf.push(input.read_byte()?);
-            }
-            if Contract::decode(&constraints_buf).is_err() {
-                return Err(codec::Error::from("invalid constraints codec"));
+        let block_cooldown: Option<u32> =
+            if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+                Some(u32::from_le_bytes([
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                ]))
+            } else {
+                None
             };
-            Some(constraints_buf)
-        } else {
-            None
-        };
+
+        let constraints: Option<Vec<u8>> =
+            if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+                let constraints_length = (input.read_byte()?.swap_bits()) + 1;
+                let mut constraints_buf: Vec<u8> = Vec::default();
+                for _ in 0..constraints_length {
+                    constraints_buf.push(input.read_byte()?);
+                }
+                if Contract::decode(&constraints_buf).is_err() {
+                    return Err(codec::Error::from("invalid constraints codec"));
+                };
+                Some(constraints_buf)
+            } else {
+                None
+            };
 
         Ok(Self {
             name,
