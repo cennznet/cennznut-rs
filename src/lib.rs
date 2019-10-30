@@ -76,7 +76,7 @@ impl Encode for Method {
         };
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
-        let mut name = [0u8; 32];
+        let mut name = [0_u8; 32];
         for i in 0..self.name.len() {
             name[i] = self.name.as_bytes()[i];
         }
@@ -140,7 +140,7 @@ impl Encode for Module {
             method_count_and_has_cooldown_byte |= 0b0000_0001;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
-        let mut name = [0u8; 32];
+        let mut name = [0_u8; 32];
         for i in 0..self.name.len() {
             name[i] = self.name.as_bytes()[i];
         }
