@@ -302,7 +302,7 @@ impl Decode for Method {
             for _ in 0..constraints_length {
                 constraints_buf.push(input.read_byte()?);
             }
-            if let Err(_) = Contract::decode(&constraints_buf) {
+            if Contract::decode(&constraints_buf).is_err() {
                 return Err(codec::Error::from("invalid constraints codec"));
             };
             Some(constraints_buf)
