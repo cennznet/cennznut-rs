@@ -123,7 +123,7 @@ impl Module {
 
     /// Returns the method, if it exists in the Module
     pub fn get_method(&self, method: &str) -> Option<&Method> {
-        for (name, m) in self.methods.iter() {
+        for (name, m) in &self.methods {
             if name == method {
                 return Some(m);
             }
@@ -150,7 +150,7 @@ impl Encode for Module {
             }
         }
 
-        for (_, method) in self.methods.iter() {
+        for (_, method) in &self.methods {
             method.encode_to(buf);
         }
     }
@@ -165,7 +165,7 @@ pub struct CENNZnutV0 {
 impl CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
     pub fn get_module(&self, module: &str) -> Option<&Module> {
-        for (name, m) in self.modules.iter() {
+        for (name, m) in &self.modules {
             if name == module {
                 return Some(m);
             }
@@ -182,7 +182,7 @@ impl Encode for CENNZnutV0 {
         let module_count = ((self.modules.len() as u8) - 1).swap_bits();
         buf.push_byte(module_count);
 
-        for (_, module) in self.modules.iter() {
+        for (_, module) in &self.modules {
             module.encode_to(buf);
         }
     }
