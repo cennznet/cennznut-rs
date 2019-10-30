@@ -248,15 +248,16 @@ impl Decode for Module {
             .trim_matches(char::from(0))
             .to_string();
 
-        let mut module_cooldown: Option<u32> = None;
-        if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            module_cooldown = Some(u32::from_le_bytes([
+        let module_cooldown = if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            Some(u32::from_le_bytes([
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
-            ]));
-        }
+            ]))
+        } else {
+            None
+        };
 
         let mut methods: Vec<(String, Method)> = Vec::default();
 
@@ -284,18 +285,18 @@ impl Decode for Method {
             .trim_matches(char::from(0))
             .to_string();
 
-        let mut block_cooldown: Option<u32> = None;
-        if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            block_cooldown = Some(u32::from_le_bytes([
+        let block_cooldown: Option<u32> = if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            Some(u32::from_le_bytes([
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
                 input.read_byte()?.swap_bits(),
-            ]));
-        }
+            ]))
+        } else {
+            None
+        };
 
-        let mut constraints: Option<Vec<u8>> = None;
-        if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+        let constraints: Option<Vec<u8>> = if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
             let constraints_length = (input.read_byte()?.swap_bits()) + 1;
             let mut constraints_buf: Vec<u8> = Vec::default();
             for _ in 0..constraints_length {
@@ -304,8 +305,10 @@ impl Decode for Method {
             if let Err(_) = Contract::decode(&constraints_buf) {
                 return Err(codec::Error::from("invalid constraints codec"));
             };
-            constraints = Some(constraints_buf);
-        }
+            Some(constraints_buf)
+        } else {
+            None
+        };
 
         Ok(Self {
             name,
