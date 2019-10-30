@@ -363,7 +363,7 @@ fn it_validates_error_with_bad_bytecode() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [PactType::StringLike(StringLike(b"test"))];
 
     assert_eq!(
@@ -394,7 +394,7 @@ fn it_validates_error_with_false_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [
         PactType::Numeric(Numeric(321)),
         PactType::StringLike(StringLike(b"b")),
@@ -416,7 +416,7 @@ fn it_validates_with_empty_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [
         PactType::Numeric(Numeric(0)),
         PactType::StringLike(StringLike(b"test")),
