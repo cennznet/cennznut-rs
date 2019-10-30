@@ -199,7 +199,7 @@ impl Decode for CENNZnutV0 {
         }
 
         let module_count = (input.read_byte()?.swap_bits()) + 1;
-        let mut modules: Vec<(String, Module)> = Default::default();
+        let mut modules: Vec<(String, Module)> = Vec::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
@@ -258,7 +258,7 @@ impl Decode for Module {
             ]));
         }
 
-        let mut methods: Vec<(String, Method)> = Default::default();
+        let mut methods: Vec<(String, Method)> = Vec::default();
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;
@@ -297,7 +297,7 @@ impl Decode for Method {
         let mut constraints: Option<Vec<u8>> = None;
         if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
             let constraints_length = (input.read_byte()?.swap_bits()) + 1;
-            let mut constraints_buf: Vec<u8> = Default::default();
+            let mut constraints_buf: Vec<u8> = Vec::default();
             for _ in 0..constraints_length {
                 constraints_buf.push(input.read_byte()?);
             }
