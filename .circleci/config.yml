@@ -25,6 +25,10 @@ jobs:
           command: |
             cargo test
       - run:
+          name: cargo clippy
+          command: |
+            cargo clippy
+      - run:
           name: "Check 'no std' build"
           command: |
             cargo +nightly --version --verbose
