@@ -49,7 +49,7 @@ impl Method {
     }
 
     /// Returns the Pact contract, if it exists in the Method
-    pub fn get_pact<'a>(&'a self) -> Option<Contract<'a>> {
+    pub fn get_pact(&self) -> Option<Contract> {
         match &self.constraints {
             Some(constraints) => match Contract::decode(constraints) {
                 Ok(contract) => Some(contract),
@@ -77,9 +77,9 @@ impl Encode for Method {
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
         let mut name = [0_u8; 32];
-        for i in 0..self.name.len() {
-            name[i] = self.name.as_bytes()[i];
-        }
+
+        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+
         buf.write(&name);
 
         if let Some(cooldown) = self.block_cooldown {
@@ -89,6 +89,7 @@ impl Encode for Method {
         }
 
         if let Some(constraints) = &self.constraints {
+            #[allow(clippy::cast_possible_truncation)]
             buf.push_byte(((constraints.len() as u8) - 1).swap_bits());
             buf.write(&constraints);
         }
@@ -135,15 +136,15 @@ impl Module {
 
 impl Encode for Module {
     fn encode_to<T: Output>(&self, buf: &mut T) {
+        #[allow(clippy::cast_possible_truncation)]
         let mut method_count_and_has_cooldown_byte = (self.methods.len() as u8) << 1;
         if self.block_cooldown.is_some() {
             method_count_and_has_cooldown_byte |= 0b0000_0001;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
         let mut name = [0_u8; 32];
-        for i in 0..self.name.len() {
-            name[i] = self.name.as_bytes()[i];
-        }
+        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+
         buf.write(&name);
 
         if let Some(cooldown) = self.block_cooldown {
@@ -180,6 +181,7 @@ impl Encode for CENNZnutV0 {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         buf.write(&[0, 0]);
 
+        #[allow(clippy::cast_possible_truncation)]
         let module_count = ((self.modules.len() as u8) - 1).swap_bits();
         buf.push_byte(module_count);
 
@@ -200,7 +202,7 @@ impl Decode for CENNZnutV0 {
         }
 
         let module_count = (input.read_byte()?.swap_bits()) + 1;
-        let mut modules: Vec<(String, Module)> = Default::default();
+        let mut modules: Vec<(String, Module)> = Vec::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
@@ -212,7 +214,7 @@ impl Decode for CENNZnutV0 {
 }
 
 impl Validate for CENNZnutV0 {
-    /// Validates a CENNZnut by (1) looking for module_name and method_name and (2) executing the
+    /// Validates a CENNZnut by (1) looking for `module_name` and `method_name` and (2) executing the
     /// Pact interpreter if constraints exist
     fn validate(
         &self,
@@ -249,17 +251,19 @@ impl Decode for Module {
             .trim_matches(char::from(0))
             .to_string();
 
-        let mut module_cooldown: Option<u32> = None;
-        if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            module_cooldown = Some(u32::from_le_bytes([
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-            ]));
-        }
+        let module_cooldown =
+            if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+                Some(u32::from_le_bytes([
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                ]))
+            } else {
+                None
+            };
 
-        let mut methods: Vec<(String, Method)> = Default::default();
+        let mut methods: Vec<(String, Method)> = Vec::default();
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;
@@ -285,28 +289,32 @@ impl Decode for Method {
             .trim_matches(char::from(0))
             .to_string();
 
-        let mut block_cooldown: Option<u32> = None;
-        if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
-            block_cooldown = Some(u32::from_le_bytes([
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-            ]));
-        }
-
-        let mut constraints: Option<Vec<u8>> = None;
-        if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
-            let constraints_length = (input.read_byte()?.swap_bits()) + 1;
-            let mut constraints_buf: Vec<u8> = Default::default();
-            for _ in 0..constraints_length {
-                constraints_buf.push(input.read_byte()?);
-            }
-            if let Err(_) = Contract::decode(&constraints_buf) {
-                return Err(codec::Error::from("invalid constraints codec"));
+        let block_cooldown: Option<u32> =
+            if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+                Some(u32::from_le_bytes([
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?.swap_bits(),
+                ]))
+            } else {
+                None
             };
-            constraints = Some(constraints_buf);
-        }
+
+        let constraints: Option<Vec<u8>> =
+            if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+                let constraints_length = (input.read_byte()?.swap_bits()) + 1;
+                let mut constraints_buf: Vec<u8> = Vec::default();
+                for _ in 0..constraints_length {
+                    constraints_buf.push(input.read_byte()?);
+                }
+                if Contract::decode(&constraints_buf).is_err() {
+                    return Err(codec::Error::from("invalid constraints codec"));
+                };
+                Some(constraints_buf)
+            } else {
+                None
+            };
 
         Ok(Self {
             name,

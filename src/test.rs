@@ -1,3 +1,4 @@
+#![warn(clippy::pedantic)]
 #![cfg(test)]
 
 use crate::{CENNZnutV0, Method, Module, Validate};
@@ -10,13 +11,13 @@ use std::string::String;
 use std::vec::Vec;
 
 fn make_methods(method: &Method) -> Vec<(String, Method)> {
-    let mut methods: Vec<(String, Method)> = Default::default();
+    let mut methods: Vec<(String, Method)> = Vec::default();
     methods.push((method.name.clone(), method.clone()));
     methods
 }
 
 fn make_modules(module: &Module) -> Vec<(String, Module)> {
-    let mut modules: Vec<(String, Module)> = Default::default();
+    let mut modules: Vec<(String, Module)> = Vec::default();
     modules.push((module.name.clone(), module.clone()));
     modules
 }
@@ -204,9 +205,11 @@ fn it_works_encode_with_constraints() {
         ]
     );
     let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
+    #[allow(clippy::cast_possible_truncation)]
+    let len_byte = constraints.len() as u8;
     assert_eq!(
         encoded[constraints_length_byte_cursor],
-        (constraints.len() as u8 - 1).swap_bits()
+        (len_byte - 1).swap_bits()
     );
 }
 
@@ -230,9 +233,11 @@ fn it_works_decode_with_constraints() {
 
     if let Some(constraints) = &method.constraints {
         let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
+        #[allow(clippy::cast_possible_truncation)]
+        let len_byte = constraints.len() as u8;
         assert_eq!(
             encoded[constraints_length_byte_cursor].swap_bits() + 1,
-            constraints.len() as u8,
+            len_byte,
         );
     };
 }
@@ -272,7 +277,7 @@ fn it_works_with_lots_of_things_codec() {
     let method = Method::new("method_test").block_cooldown(123);
     let method2 = Method::new("method_test2").block_cooldown(321);
 
-    let mut methods: Vec<(String, Method)> = Default::default();
+    let mut methods: Vec<(String, Method)> = Vec::default();
     methods.push((method.name.clone(), method.clone()));
     methods.push((method2.name.clone(), method2.clone()));
 
@@ -283,7 +288,7 @@ fn it_works_with_lots_of_things_codec() {
         .block_cooldown(55_555)
         .methods(methods.clone());
 
-    let mut modules: Vec<(String, Module)> = Default::default();
+    let mut modules: Vec<(String, Module)> = Vec::default();
     modules.push((module.name.clone(), module.clone()));
     modules.push((module2.name.clone(), module2.clone()));
 
@@ -363,7 +368,7 @@ fn it_validates_error_with_bad_bytecode() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [PactType::StringLike(StringLike(b"test"))];
 
     assert_eq!(
@@ -394,7 +399,7 @@ fn it_validates_error_with_false_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [
         PactType::Numeric(Numeric(321)),
         PactType::StringLike(StringLike(b"b")),
@@ -416,7 +421,7 @@ fn it_validates_with_empty_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules: modules };
+    let cennznut = CENNZnutV0 { modules };
     let args = [
         PactType::Numeric(Numeric(0)),
         PactType::StringLike(StringLike(b"test")),
