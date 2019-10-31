@@ -8,8 +8,7 @@ jobs:
       - run:
           name: setup
           command: |
-            rustup component add rustfmt --toolchain 1.37.0-x86_64-unknown-linux-gnu
-            rustup component add clippy --toolchain 1.37.0-x86_64-unknown-linux-gnu
+            rustup component add rustfmt clippy --toolchain 1.37.0-x86_64-unknown-linux-gnu
             rustup install nightly
       - run:
           name: cargo check
