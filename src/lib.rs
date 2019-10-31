@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::must_use_candidate)]
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -214,7 +215,7 @@ impl Decode for CENNZnutV0 {
 }
 
 impl Validate for CENNZnutV0 {
-    /// Validates a CENNZnut by (1) looking for module_name and method_name and (2) executing the
+    /// Validates a CENNZnut by (1) looking for `module_name` and `method_name` and (2) executing the
     /// Pact interpreter if constraints exist
     fn validate(
         &self,
