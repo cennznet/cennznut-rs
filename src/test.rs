@@ -1,3 +1,4 @@
+#![warn(clippy::pedantic)]
 #![cfg(test)]
 
 use crate::{CENNZnutV0, Method, Module, Validate};
