@@ -8,8 +8,7 @@ extern crate alloc;
 extern crate std as alloc;
 
 use alloc::borrow::ToOwned;
-use alloc::fmt;
-use alloc::fmt::{Display, Formatter};
+use alloc::fmt::{self, Display, Formatter};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
@@ -19,6 +18,7 @@ use pact::interpreter::{interpret, types::PactType};
 
 mod test;
 
+/// A CENNZnet permission domain
 #[derive(Debug, Eq, PartialEq)]
 pub enum Domain {
     Method,
@@ -36,6 +36,7 @@ impl Display for Domain {
     }
 }
 
+/// Error which may occur while validating the permission domain
 #[derive(Debug, Eq, PartialEq)]
 pub enum ValidationErr {
     NoPermission(Domain),
