@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{CENNZnutV0, Method, Module, Validate};
+use crate::{CENNZnutV0, Domain, Method, Module, Validate, ValidationErr};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
@@ -341,11 +341,11 @@ fn it_validates() {
     assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
     assert_eq!(
         cennznut.validate("module_test2", &method.name, &args),
-        Err("CENNZnut does not grant permission for module")
+        Err(ValidationErr::NoPermission(Domain::Module))
     );
     assert_eq!(
         cennznut.validate(&module.name, "method_test2", &args),
-        Err("CENNZnut does not grant permission for method")
+        Err(ValidationErr::NoPermission(Domain::Method))
     );
 }
 
@@ -373,7 +373,7 @@ fn it_validates_error_with_bad_bytecode() {
 
     assert_eq!(
         cennznut.validate(&module.name, &method.name, &args),
-        Err("error while interpreting constraints")
+        Err(ValidationErr::ConstraintsInterpretation)
     );
 }
 
@@ -407,7 +407,7 @@ fn it_validates_error_with_false_constraints() {
 
     assert_eq!(
         cennznut.validate(&module.name, &method.name, &args),
-        Err("CENNZnut does not grant permission for method arguments")
+        Err(ValidationErr::NoPermission(Domain::MethodArguments))
     );
 }
 

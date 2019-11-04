@@ -8,6 +8,8 @@ extern crate alloc;
 extern crate std as alloc;
 
 use alloc::borrow::ToOwned;
+use alloc::fmt;
+use alloc::fmt::{Display, Formatter};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
@@ -17,16 +19,54 @@ use pact::interpreter::{interpret, types::PactType};
 
 mod test;
 
+#[derive(Debug, Eq, PartialEq)]
+pub enum Domain {
+    Method,
+    MethodArguments,
+    Module,
+}
+
+impl Display for Domain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Domain::Method => write!(f, "method"),
+            Domain::MethodArguments => write!(f, "method arguments"),
+            Domain::Module => write!(f, "module"),
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum ValidationErr {
+    NoPermission(Domain),
+    ConstraintsInterpretation,
+}
+
+impl Display for ValidationErr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            ValidationErr::NoPermission(permission_domain) => write!(
+                f,
+                "CENNZnut does not grant permission for {}",
+                permission_domain
+            ),
+            ValidationErr::ConstraintsInterpretation => {
+                write!(f, "error while interpreting constraints")
+            }
+        }
+    }
+}
+
+pub trait Validate {
+    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr>;
+}
+
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
     pub name: String,
     pub block_cooldown: Option<u32>,
     pub constraints: Option<Vec<u8>>,
-}
-
-pub trait Validate {
-    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), &'static str>;
 }
 
 impl Method {
@@ -221,18 +261,18 @@ impl Validate for CENNZnutV0 {
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), ValidationErr> {
         let module = self
             .get_module(module_name)
-            .ok_or_else(|| "CENNZnut does not grant permission for module")?;
+            .ok_or_else(|| ValidationErr::NoPermission(Domain::Module))?;
         let method = module
             .get_method(method_name)
-            .ok_or_else(|| "CENNZnut does not grant permission for method")?;
+            .ok_or_else(|| ValidationErr::NoPermission(Domain::Method))?;
         if let Some(contract) = method.get_pact() {
             match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
                 Ok(true) => {}
-                Ok(false) => return Err("CENNZnut does not grant permission for method arguments"),
-                Err(_) => return Err("error while interpreting constraints"),
+                Ok(false) => return Err(ValidationErr::NoPermission(Domain::MethodArguments)),
+                Err(_) => return Err(ValidationErr::ConstraintsInterpretation),
             }
         }
         Ok(())
