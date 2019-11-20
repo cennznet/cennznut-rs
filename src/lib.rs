@@ -12,7 +12,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use pact::compiler::Contract;
+use pact::contract::Contract;
 use pact::interpreter::{interpret, types::PactType};
 
 mod test;
