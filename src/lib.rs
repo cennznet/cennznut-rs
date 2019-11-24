@@ -284,7 +284,7 @@ impl Decode for Module {
         let method_count = block_cooldown_and_method_count >> 1;
 
         let mut name_buf: [u8; 32] = Default::default();
-        let _ = input
+        input
             .read(&mut name_buf)
             .map_err(|_| "expected 32 byte module name")?;
         let name = core::str::from_utf8(&name_buf)
@@ -324,7 +324,7 @@ impl Decode for Method {
         let block_cooldown_and_constraints = input.read_byte()?.swap_bits();
 
         let mut name_buf: [u8; 32] = Default::default();
-        let _ = input
+        input
             .read(&mut name_buf)
             .map_err(|_| "expected 32 byte method name")?;
         let name = core::str::from_utf8(&name_buf)
