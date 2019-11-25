@@ -7,10 +7,11 @@ edition = "2018"
 [dependencies]
 bit_reverse = { version = "0.1.8", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
-pact = { branch = "0.1.0", git = "https://github.com/cennznet/pact" }
+pact = { branch = "0.1.0", git = "https://github.com/cennznet/pact", default-features = false }
 
 [features]
 default = [ "std" ]
 std = [
-  "codec/std"
+  "codec/std",
+  "pact/std",
 ]

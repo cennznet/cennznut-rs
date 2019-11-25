@@ -75,7 +75,7 @@ dependencies = [
 
 [[package]]
 name = "cennznut"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "bit_reverse 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "pact 0.1.0 (git+https://github.com/cennznet/pact?branch=0.1.0)",
@@ -168,7 +168,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "pact"
 version = "0.1.0"
-source = "git+https://github.com/cennznet/pact?branch=0.1.0#63f9f0af9503c451cfd17d115100f8cf0f5cc607"
+source = "git+https://github.com/cennznet/pact?branch=0.1.0#8a711951b7684af1d3631e52789a2ee6f7dc6816"
 dependencies = [
  "bit_reverse 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "hashbrown 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
