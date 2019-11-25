@@ -29,9 +29,9 @@ pub enum Domain {
 impl Display for Domain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Domain::Method => write!(f, "method"),
-            Domain::MethodArguments => write!(f, "method arguments"),
-            Domain::Module => write!(f, "module"),
+            Self::Method => write!(f, "method"),
+            Self::MethodArguments => write!(f, "method arguments"),
+            Self::Module => write!(f, "module"),
         }
     }
 }
@@ -46,14 +46,12 @@ pub enum ValidationErr {
 impl Display for ValidationErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            ValidationErr::NoPermission(permission_domain) => write!(
+            Self::NoPermission(permission_domain) => write!(
                 f,
                 "CENNZnut does not grant permission for {}",
                 permission_domain
             ),
-            ValidationErr::ConstraintsInterpretation => {
-                write!(f, "error while interpreting constraints")
-            }
+            Self::ConstraintsInterpretation => write!(f, "error while interpreting constraints"),
         }
     }
 }
@@ -131,7 +129,7 @@ impl Encode for Method {
 
         if let Some(constraints) = &self.constraints {
             #[allow(clippy::cast_possible_truncation)]
-            buf.push_byte(((constraints.len() as u8) - 1).swap_bits());
+            buf.push_byte(((constraints.len() as u8).saturating_sub(1)).swap_bits());
             buf.write(&constraints);
         }
     }
@@ -223,7 +221,7 @@ impl Encode for CENNZnutV0 {
         buf.write(&[0, 0]);
 
         #[allow(clippy::cast_possible_truncation)]
-        let module_count = ((self.modules.len() as u8) - 1).swap_bits();
+        let module_count = ((self.modules.len() as u8).saturating_sub(1)).swap_bits();
         buf.push_byte(module_count);
 
         for (_, module) in &self.modules {
@@ -242,8 +240,8 @@ impl Decode for CENNZnutV0 {
             return Err(codec::Error::from("expected version : 0"));
         }
 
-        let module_count = (input.read_byte()?.swap_bits()) + 1;
-        let mut modules: Vec<(String, Module)> = Vec::default();
+        let module_count = (input.read_byte()?.swap_bits()).saturating_add(1);
+        let mut modules = Vec::<(String, Module)>::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
@@ -286,7 +284,9 @@ impl Decode for Module {
         let method_count = block_cooldown_and_method_count >> 1;
 
         let mut name_buf: [u8; 32] = Default::default();
-        let _ = input.read(&mut name_buf);
+        input
+            .read(&mut name_buf)
+            .map_err(|_| "expected 32 byte module name")?;
         let name = core::str::from_utf8(&name_buf)
             .map_err(|_| codec::Error::from("module names should be utf8 encoded"))?
             .trim_matches(char::from(0))
@@ -324,7 +324,9 @@ impl Decode for Method {
         let block_cooldown_and_constraints = input.read_byte()?.swap_bits();
 
         let mut name_buf: [u8; 32] = Default::default();
-        let _ = input.read(&mut name_buf);
+        input
+            .read(&mut name_buf)
+            .map_err(|_| "expected 32 byte method name")?;
         let name = core::str::from_utf8(&name_buf)
             .map_err(|_| codec::Error::from("method names should be utf8 encoded"))?
             .trim_matches(char::from(0))
@@ -344,8 +346,8 @@ impl Decode for Method {
 
         let constraints: Option<Vec<u8>> =
             if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
-                let constraints_length = (input.read_byte()?.swap_bits()) + 1;
-                let mut constraints_buf: Vec<u8> = Vec::default();
+                let constraints_length = (input.read_byte()?.swap_bits()).saturating_add(1);
+                let mut constraints_buf = Vec::<u8>::default();
                 for _ in 0..constraints_length {
                     constraints_buf.push(input.read_byte()?);
                 }
