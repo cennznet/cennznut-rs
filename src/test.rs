@@ -512,5 +512,8 @@ fn wildcard_method_validates() {
         PactType::StringLike(StringLike(b"test")),
     ];
 
-    assert_eq!(cennznut.validate(&module.name, "my_unregistered_method", &args), Ok(()));
+    assert_eq!(
+        cennznut.validate(&module.name, "my_unregistered_method", &args),
+        Ok(())
+    );
 }
