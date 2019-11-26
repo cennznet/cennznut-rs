@@ -482,3 +482,33 @@ fn it_works_get_pact() {
 
     assert_eq!(contract_without, None);
 }
+
+#[test]
+fn wildcard_method() {
+    let methods: Vec<(String, Method)> = Vec::default();
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+
+    let result = module.get_method("my_unregistered_method");
+    assert_ne!(result, None);
+}
+
+#[test]
+fn wildcard_method_validates() {
+    let methods: Vec<(String, Method)> = Vec::default();
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [
+        PactType::Numeric(Numeric(0)),
+        PactType::StringLike(StringLike(b"test")),
+    ];
+
+    assert_eq!(cennznut.validate(&module.name, "my_unregistered_method", &args), Ok(()));
+}

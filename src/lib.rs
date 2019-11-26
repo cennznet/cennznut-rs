@@ -141,6 +141,7 @@ pub struct Module {
     pub name: String,
     pub block_cooldown: Option<u32>,
     pub methods: Vec<(String, Method)>,
+    wild_method: Method,
 }
 
 impl Module {
@@ -149,6 +150,7 @@ impl Module {
             name: name.to_string(),
             block_cooldown: None,
             methods: Vec::new(),
+            wild_method: Method::new("wild"),
         }
     }
 
@@ -164,6 +166,9 @@ impl Module {
 
     /// Returns the method, if it exists in the Module
     pub fn get_method(&self, method: &str) -> Option<&Method> {
+        if self.methods.len() == 0 {
+            return Some(&self.wild_method);
+        }
         for (name, m) in &self.methods {
             if name == method {
                 return Some(m);
@@ -315,6 +320,7 @@ impl Decode for Module {
             name,
             block_cooldown: module_cooldown,
             methods,
+            wild_method: Method::new("wild"),
         })
     }
 }
