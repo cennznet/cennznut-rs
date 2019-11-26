@@ -210,7 +210,7 @@ impl CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
     pub fn get_module(&self, module: &str) -> Option<&Module> {
         for (name, m) in &self.modules {
-            if name == module {
+            if name == module || name == "*" {
                 return Some(m);
             }
         }

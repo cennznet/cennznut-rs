@@ -509,13 +509,96 @@ fn wildcard_method_validates() {
     let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
-    let args = [
-        PactType::Numeric(Numeric(0)),
-        PactType::StringLike(StringLike(b"test")),
-    ];
+    let args = [];
 
     assert_eq!(
         cennznut.validate(&module.name, "my_unregistered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn wildcard_module() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+
+    let result = cennznut.get_module("my_unregistered_module");
+    assert_ne!(result, None);
+}
+
+#[test]
+fn wildcard_module_validates() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("my_unregistered_module", "registered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn wildcard_module_wildcard_method_validates() {
+    let method = Method::new("*").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("my_unregistered_module", "my_unregistered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn unregistered_module_fails_validation() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("registered_module")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_ne!(
+        cennznut.validate("my_unregistered_module", "registered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn unregistered_method_fails_validation() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("registered_module")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_ne!(
+        cennznut.validate("registered_module", "my_unregistered_method", &args),
         Ok(())
     );
 }
