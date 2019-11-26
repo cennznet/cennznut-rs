@@ -1,3 +1,5 @@
+// Copyright 2019 Centrality Investments Limited
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
 

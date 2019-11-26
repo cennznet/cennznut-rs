@@ -1,3 +1,5 @@
+// Copyright 2019 Centrality Investments Limited
+
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
