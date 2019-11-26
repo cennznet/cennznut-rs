@@ -487,7 +487,8 @@ fn it_works_get_pact() {
 
 #[test]
 fn wildcard_method() {
-    let methods: Vec<(String, Method)> = Vec::default();
+    let method = Method::new("*").block_cooldown(123);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(1)
@@ -499,7 +500,8 @@ fn wildcard_method() {
 
 #[test]
 fn wildcard_method_validates() {
-    let methods: Vec<(String, Method)> = Vec::default();
+    let method = Method::new("*").block_cooldown(123);
+    let methods = make_methods(&method);
 
     let module = Module::new("module_test")
         .block_cooldown(1)
