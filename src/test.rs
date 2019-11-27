@@ -3,7 +3,7 @@
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{CENNZnutV0, Domain, Method, Module, Validate, ValidationErr};
+use crate::{CENNZnutV0, Domain, Method, Module, Validate, ValidationErr, WILDCARD};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
@@ -487,7 +487,7 @@ fn it_works_get_pact() {
 
 #[test]
 fn wildcard_method() {
-    let method = Method::new("*").block_cooldown(123);
+    let method = Method::new(WILDCARD).block_cooldown(123);
     let methods = make_methods(&method);
 
     let module = Module::new("module_test")
@@ -500,7 +500,7 @@ fn wildcard_method() {
 
 #[test]
 fn wildcard_method_validates() {
-    let method = Method::new("*").block_cooldown(123);
+    let method = Method::new(WILDCARD).block_cooldown(123);
     let methods = make_methods(&method);
 
     let module = Module::new("module_test")
@@ -522,7 +522,7 @@ fn wildcard_module() {
     let method = Method::new("registered_method").block_cooldown(123);
     let methods = make_methods(&method);
 
-    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -536,7 +536,7 @@ fn wildcard_module_validates() {
     let method = Method::new("registered_method").block_cooldown(123);
     let methods = make_methods(&method);
 
-    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -550,10 +550,10 @@ fn wildcard_module_validates() {
 
 #[test]
 fn wildcard_module_wildcard_method_validates() {
-    let method = Method::new("*").block_cooldown(123);
+    let method = Method::new(WILDCARD).block_cooldown(123);
     let methods = make_methods(&method);
 
-    let module = Module::new("*").block_cooldown(1).methods(methods);
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
     let cennznut = CENNZnutV0 { modules };
@@ -605,7 +605,7 @@ fn unregistered_method_fails_validation() {
 
 #[test]
 fn registered_methods_have_priority_over_wildcard_methods() {
-    let wild_method = Method::new("*").block_cooldown(123);
+    let wild_method = Method::new(WILDCARD).block_cooldown(123);
     let registered_method = Method::new("registered_method").block_cooldown(123);
 
     let mut methods: Vec<(String, Method)> = Vec::default();
@@ -626,7 +626,7 @@ fn registered_modules_have_priority_over_wildcard_modules() {
     let method = Method::new("registered_method").block_cooldown(123);
     let methods = make_methods(&method);
 
-    let wild_module = Module::new("*")
+    let wild_module = Module::new(WILDCARD)
         .block_cooldown(123)
         .methods(methods.clone());
     let registered_module = Module::new("registered_module")

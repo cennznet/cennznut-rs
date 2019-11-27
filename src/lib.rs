@@ -28,7 +28,7 @@ pub enum Domain {
     Module,
 }
 
-const WILDCARD: &str = "*";
+pub const WILDCARD: &str = "*";
 
 impl Display for Domain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
