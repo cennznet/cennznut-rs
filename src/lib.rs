@@ -28,6 +28,8 @@ pub enum Domain {
     Module,
 }
 
+const WILDCARD: &str = "*";
+
 impl Display for Domain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
@@ -172,7 +174,7 @@ impl Module {
             if name == method {
                 outcome = Some(m);
                 break;
-            } else if name == "*" {
+            } else if name == WILDCARD {
                 outcome = Some(m);
             }
         }
@@ -213,14 +215,14 @@ pub struct CENNZnutV0 {
 
 impl CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
+    /// Wildcard modules have lower priority than defined modules
     pub fn get_module(&self, module: &str) -> Option<&Module> {
         let mut outcome: Option<&Module> = None;
         for (name, m) in &self.modules {
             if name == module {
                 outcome = Some(m);
                 break;
-            }
-            if name == "*" {
+            } else if name == WILDCARD {
                 outcome = Some(m);
             }
         }
