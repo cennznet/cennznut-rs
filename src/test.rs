@@ -495,7 +495,7 @@ fn wildcard_method() {
         .methods(methods);
 
     let result = module.get_method("my_unregistered_method");
-    assert_ne!(result.name, None);
+    assert_ne!(result, None);
 }
 
 #[test]
