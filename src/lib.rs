@@ -165,13 +165,18 @@ impl Module {
     }
 
     /// Returns the method, if it exists in the Module
+    /// Wildcard methods have lower priority than defined methods
     pub fn get_method(&self, method: &str) -> Option<&Method> {
+        let mut outcome: Option<&Method> = None;
         for (name, m) in &self.methods {
-            if name == method || name == "*" {
-                return Some(m);
+            if name == method {
+                outcome = Some(m);
+                break;
+            } else if name == "*" {
+                outcome = Some(m);
             }
         }
-        None
+        outcome
     }
 }
 
@@ -209,12 +214,17 @@ pub struct CENNZnutV0 {
 impl CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
     pub fn get_module(&self, module: &str) -> Option<&Module> {
+        let mut outcome: Option<&Module> = None;
         for (name, m) in &self.modules {
-            if name == module || name == "*" {
-                return Some(m);
+            if name == module {
+                outcome = Some(m);
+                break;
+            }
+            if name == "*" {
+                outcome = Some(m);
             }
         }
-        None
+        outcome
     }
 }
 

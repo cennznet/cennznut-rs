@@ -602,3 +602,44 @@ fn unregistered_method_fails_validation() {
         Ok(())
     );
 }
+
+#[test]
+fn registered_methods_have_priority_over_wildcard_methods() {
+    let wild_method = Method::new("*").block_cooldown(123);
+    let registered_method = Method::new("registered_method").block_cooldown(123);
+
+    let mut methods: Vec<(String, Method)> = Vec::default();
+    methods.push((wild_method.name.clone(), wild_method.clone()));
+    methods.push((registered_method.name.clone(), registered_method.clone()));
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+
+    let result = module.get_method("registered_method").unwrap();
+
+    assert_eq!(result.name, "registered_method");
+}
+
+#[test]
+fn registered_modules_have_priority_over_wildcard_modules() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let wild_module = Module::new("*")
+        .block_cooldown(123)
+        .methods(methods.clone());
+    let registered_module = Module::new("registered_module")
+        .block_cooldown(123)
+        .methods(methods);
+
+    let mut modules: Vec<(String, Module)> = Vec::default();
+    modules.push((wild_module.name.clone(), wild_module.clone()));
+    modules.push((registered_module.name.clone(), registered_module.clone()));
+
+    let cennznut = CENNZnutV0 { modules };
+
+    let result = cennznut.get_module("registered_module").unwrap();
+
+    assert_eq!(result.name, "registered_module");
+}
