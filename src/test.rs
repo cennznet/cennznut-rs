@@ -495,7 +495,7 @@ fn wildcard_method() {
         .methods(methods);
 
     let result = module.get_method("my_unregistered_method");
-    assert_ne!(result, None);
+    assert_ne!(result.name, None);
 }
 
 #[test]
@@ -578,9 +578,9 @@ fn unregistered_module_fails_validation() {
     let cennznut = CENNZnutV0 { modules };
     let args = [];
 
-    assert_ne!(
+    assert_eq!(
         cennznut.validate("my_unregistered_module", "registered_method", &args),
-        Ok(())
+        Err(ValidationErr::NoPermission(Domain::Module))
     );
 }
 
@@ -597,9 +597,9 @@ fn unregistered_method_fails_validation() {
     let cennznut = CENNZnutV0 { modules };
     let args = [];
 
-    assert_ne!(
+    assert_eq!(
         cennznut.validate("registered_module", "my_unregistered_method", &args),
-        Ok(())
+        Err(ValidationErr::NoPermission(Domain::Method))
     );
 }
 
