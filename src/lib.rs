@@ -18,6 +18,7 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::compiler::Contract;
 use pact::interpreter::{interpret, types::PactType};
+use std::convert::TryFrom;
 
 mod test;
 
@@ -63,16 +64,6 @@ impl Display for ValidationErr {
 
 pub trait Validate {
     fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr>;
-}
-
-type ModuleVec = Vec<(String, Module)>;
-
-pub trait GetModule {
-    /// Returns the module by its name, if it exists
-    fn get_module(&self, module: &str) -> Option<&Module>;
-
-    /// Get the reference to the vector of the modules paired with their names
-    fn get_modules(&self) -> &ModuleVec;
 }
 
 pub trait PartialDecode: Sized {
@@ -228,6 +219,17 @@ pub enum CENNZnut {
     V0(CENNZnutV0),
 }
 
+#[allow(unreachable_patterns)]
+impl TryFrom<CENNZnut> for CENNZnutV0 {
+    type Error = codec::Error;
+    fn try_from(v: CENNZnut) -> Result<Self, Self::Error> {
+        match v {
+            V0(inner) => Ok(inner),
+            _ => Err(codec::Error::from("CENNZnut version is not 0")),
+        }
+    }
+}
+
 impl Encode for CENNZnut {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         match &self {
@@ -266,30 +268,16 @@ impl Validate for CENNZnut {
     }
 }
 
-impl GetModule for CENNZnut {
-    fn get_module(&self, module: &str) -> Option<&Module> {
-        match &self {
-            V0(inner) => inner.get_module(module),
-        }
-    }
-
-    fn get_modules(&self) -> &ModuleVec {
-        match &self {
-            V0(inner) => &inner.modules,
-        }
-    }
-}
-
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
-    pub modules: ModuleVec,
+    pub modules: Vec<(String, Module)>,
 }
 
-impl GetModule for CENNZnutV0 {
+impl CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
     /// Wildcard modules have lower priority than defined modules
-    fn get_module(&self, module: &str) -> Option<&Module> {
+    pub fn get_module(&self, module: &str) -> Option<&Module> {
         let mut outcome: Option<&Module> = None;
         for (name, m) in &self.modules {
             if name == module {
@@ -300,10 +288,6 @@ impl GetModule for CENNZnutV0 {
             }
         }
         outcome
-    }
-
-    fn get_modules(&self) -> &ModuleVec {
-        &self.modules
     }
 }
 

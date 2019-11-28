@@ -4,7 +4,7 @@
 #![cfg(test)]
 
 use crate::{
-    CENNZnut, CENNZnutV0, Domain, GetModule, Method, Module, Validate, ValidationErr, WILDCARD,
+    CENNZnut, CENNZnutV0, Domain, Method, Module, TryFrom, Validate, ValidationErr, WILDCARD,
 };
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
@@ -77,7 +77,8 @@ fn it_works_decode() {
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
-    assert_eq!(c.get_modules().len(), 1);
+    let c0 = CENNZnutV0::try_from(c).unwrap();
+    assert_eq!(c0.modules.len(), 1);
 }
 
 #[test]
@@ -111,8 +112,9 @@ fn it_works_decode_with_module_cooldown() {
         116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
+    let c0 = CENNZnutV0::try_from(c).unwrap();
     assert_eq!(
-        c.get_module("module_test")
+        c0.get_module("module_test")
             .expect("module exists")
             .block_cooldown,
         Some(86_400)
@@ -151,8 +153,9 @@ fn it_works_decode_with_method_cooldown() {
         0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
+    let c0 = CENNZnutV0::try_from(c).unwrap();
     assert_eq!(
-        c.get_module("module_test")
+        c0.get_module("module_test")
             .expect("module exists")
             .get_method("method_test")
             .expect("method exists")
@@ -223,7 +226,8 @@ fn it_works_decode_with_constraints() {
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
 
-    let method = &c
+    let c0 = CENNZnutV0::try_from(c).unwrap();
+    let method = &c0
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
@@ -440,8 +444,8 @@ fn it_works_get_pact() {
     ];
 
     let cennznut_with: CENNZnut = Decode::decode(&mut &encoded_with[..]).expect("it works");
-
-    let contract_with = cennznut_with
+    let cennznut_with_v0 = CENNZnutV0::try_from(cennznut_with).unwrap();
+    let contract_with = cennznut_with_v0
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
@@ -470,8 +474,8 @@ fn it_works_get_pact() {
     ];
 
     let cennznut_without: CENNZnut = Decode::decode(&mut &encoded_without[..]).expect("it works");
-
-    let contract_without = cennznut_without
+    let cennznut_without_v0 = CENNZnutV0::try_from(cennznut_without).unwrap();
+    let contract_without = cennznut_without_v0
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
