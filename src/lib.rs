@@ -60,6 +60,21 @@ pub trait Validate {
     fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr>;
 }
 
+type ModuleVec = Vec<(String, Module)>;
+
+pub trait GetModule {
+    /// Returns the module by its name, if it exists
+    fn get_module(&self, module: &str) -> Option<&Module>;
+
+    /// Get the reference to the vector of the modules paired with their names
+    fn get_modules(&self) -> &ModuleVec;
+}
+
+pub trait PartialDecode: Sized {
+    /// decode an input which is not including the version as the up front two bytes
+    fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error>;
+}
+
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
@@ -198,21 +213,92 @@ impl Encode for Module {
     }
 }
 
+#[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
+pub enum CENNZnut {
+    V0(CENNZnutV0),
+}
+
+impl Encode for CENNZnut {
+    fn encode_to<T: Output>(&self, buf: &mut T) {
+        use CENNZnut::*;
+
+        match &self {
+            V0(inner) => inner.encode_to(buf),
+        }
+    }
+}
+
+impl Decode for CENNZnut {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        use CENNZnut::*;
+
+        let version = u16::from_le_bytes([
+            input.read_byte()?.swap_bits(),
+            input.read_byte()?.swap_bits(),
+        ]);
+
+        match version {
+            0 => match CENNZnutV0::partial_decode(input) {
+                Ok(inner) => Ok(V0(inner)),
+                Err(e) => Err(e),
+            },
+            _ => Err(codec::Error::from("unexpected version")),
+        }
+    }
+}
+
+impl Validate for CENNZnut {
+    fn validate(
+        &self,
+        module_name: &str,
+        method_name: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr> {
+        use CENNZnut::*;
+
+        match &self {
+            V0(inner) => inner.validate(module_name, method_name, args),
+        }
+    }
+}
+
+impl GetModule for CENNZnut {
+    fn get_module(&self, module: &str) -> Option<&Module> {
+        use CENNZnut::*;
+
+        match &self {
+            V0(inner) => inner.get_module(module),
+        }
+    }
+
+    fn get_modules(&self) -> &ModuleVec {
+        use CENNZnut::*;
+
+        match &self {
+            V0(inner) => &inner.modules,
+        }
+    }
+}
+
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
-    pub modules: Vec<(String, Module)>,
+    pub modules: ModuleVec,
 }
 
-impl CENNZnutV0 {
+impl GetModule for CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
-    pub fn get_module(&self, module: &str) -> Option<&Module> {
+    fn get_module(&self, module: &str) -> Option<&Module> {
         for (name, m) in &self.modules {
             if name == module {
                 return Some(m);
             }
         }
         None
+    }
+
+    fn get_modules(&self) -> &ModuleVec {
+        return &self.modules;
     }
 }
 
@@ -230,16 +316,8 @@ impl Encode for CENNZnutV0 {
     }
 }
 
-impl Decode for CENNZnutV0 {
-    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let version = u16::from_le_bytes([
-            input.read_byte()?.swap_bits(),
-            input.read_byte()?.swap_bits(),
-        ]);
-        if version != 0 {
-            return Err(codec::Error::from("expected version : 0"));
-        }
-
+impl PartialDecode for CENNZnutV0 {
+    fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let module_count = (input.read_byte()?.swap_bits()).saturating_add(1);
         let mut modules = Vec::<(String, Module)>::default();
 
@@ -249,6 +327,19 @@ impl Decode for CENNZnutV0 {
         }
 
         Ok(Self { modules })
+    }
+}
+
+impl Decode for CENNZnutV0 {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        let version = u16::from_le_bytes([
+            input.read_byte()?.swap_bits(),
+            input.read_byte()?.swap_bits(),
+        ]);
+        if version != 0 {
+            return Err(codec::Error::from("expected version : 0"));
+        }
+        Self::partial_decode(input)
     }
 }
 

@@ -1,7 +1,7 @@
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{CENNZnutV0, Domain, Method, Module, Validate, ValidationErr};
+use crate::{CENNZnut, CENNZnutV0, Domain, GetModule, Method, Module, Validate, ValidationErr};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
@@ -71,9 +71,9 @@ fn it_works_decode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
+    let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
-    assert_eq!(c.modules.len(), 1);
+    assert_eq!(c.get_modules().len(), 1);
 }
 
 #[test]
@@ -106,7 +106,7 @@ fn it_works_decode_with_module_cooldown() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104, 111, 100, 95,
         116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("It works");
+    let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     assert_eq!(
         c.get_module("module_test")
             .expect("module exists")
@@ -146,13 +146,7 @@ fn it_works_decode_with_method_cooldown() {
         95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
         0, 0, 0,
     ];
-    let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("It works");
-    assert_eq!(
-        c.get_module("module_test")
-            .expect("module exists")
-            .block_cooldown,
-        Some(86_400)
-    );
+    let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     assert_eq!(
         c.get_module("module_test")
             .expect("module exists")
@@ -222,7 +216,7 @@ fn it_works_decode_with_constraints() {
         246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
         105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1,
     ];
-    let c: CENNZnutV0 = Decode::decode(&mut &encoded[..]).expect("it works");
+    let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
 
     let method = &c
@@ -259,15 +253,15 @@ fn it_works_decode_with_valid_constraints() {
     let encoded_with_n_too_large: Vec<u8> = [encoded_cennznut.clone(), n_too_large].concat();
 
     assert_eq!(
-        CENNZnutV0::decode(&mut &encoded_with_bad_type_id[..]),
+        CENNZnut::decode(&mut &encoded_with_bad_type_id[..]),
         Err(codec::Error::from("invalid constraints codec")),
     );
     assert_eq!(
-        CENNZnutV0::decode(&mut &encoded_with_n_too_short[..]),
+        CENNZnut::decode(&mut &encoded_with_n_too_short[..]),
         Err(codec::Error::from("invalid constraints codec")),
     );
     assert_eq!(
-        CENNZnutV0::decode(&mut &encoded_with_n_too_large[..]),
+        CENNZnut::decode(&mut &encoded_with_n_too_large[..]),
         Err(codec::Error::from("invalid constraints codec")),
     );
 }
@@ -441,7 +435,7 @@ fn it_works_get_pact() {
         105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1,
     ];
 
-    let cennznut_with: CENNZnutV0 = Decode::decode(&mut &encoded_with[..]).expect("it works");
+    let cennznut_with: CENNZnut = Decode::decode(&mut &encoded_with[..]).expect("it works");
 
     let contract_with = cennznut_with
         .get_module("module_test")
@@ -471,7 +465,7 @@ fn it_works_get_pact() {
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
 
-    let cennznut_without: CENNZnutV0 = Decode::decode(&mut &encoded_without[..]).expect("it works");
+    let cennznut_without: CENNZnut = Decode::decode(&mut &encoded_without[..]).expect("it works");
 
     let contract_without = cennznut_without
         .get_module("module_test")
