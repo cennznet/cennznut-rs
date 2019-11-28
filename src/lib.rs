@@ -1,3 +1,5 @@
+// Copyright 2019 Centrality Investments Limited
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
 
@@ -25,6 +27,8 @@ pub enum Domain {
     MethodArguments,
     Module,
 }
+
+pub const WILDCARD: &str = "*";
 
 impl Display for Domain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
@@ -178,13 +182,18 @@ impl Module {
     }
 
     /// Returns the method, if it exists in the Module
+    /// Wildcard methods have lower priority than defined methods
     pub fn get_method(&self, method: &str) -> Option<&Method> {
+        let mut outcome: Option<&Method> = None;
         for (name, m) in &self.methods {
             if name == method {
-                return Some(m);
+                outcome = Some(m);
+                break;
+            } else if name == WILDCARD {
+                outcome = Some(m);
             }
         }
-        None
+        outcome
     }
 }
 
@@ -288,13 +297,18 @@ pub struct CENNZnutV0 {
 
 impl GetModule for CENNZnutV0 {
     /// Returns the module, if it exists in the CENNZnut
+    /// Wildcard modules have lower priority than defined modules
     fn get_module(&self, module: &str) -> Option<&Module> {
+        let mut outcome: Option<&Module> = None;
         for (name, m) in &self.modules {
             if name == module {
-                return Some(m);
+                outcome = Some(m);
+                break;
+            } else if name == WILDCARD {
+                outcome = Some(m);
             }
         }
-        None
+        outcome
     }
 
     fn get_modules(&self) -> &ModuleVec {

@@ -1,7 +1,11 @@
+// Copyright 2019 Centrality Investments Limited
+
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{CENNZnut, CENNZnutV0, Domain, GetModule, Method, Module, Validate, ValidationErr};
+use crate::{
+    CENNZnut, CENNZnutV0, Domain, GetModule, Method, Module, Validate, ValidationErr, WILDCARD,
+};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::compiler::{Contract, DataTable};
@@ -475,4 +479,163 @@ fn it_works_get_pact() {
         .get_pact();
 
     assert_eq!(contract_without, None);
+}
+
+#[test]
+fn wildcard_method() {
+    let method = Method::new(WILDCARD).block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+
+    let result = module.get_method("my_unregistered_method");
+    assert_ne!(result, None);
+}
+
+#[test]
+fn wildcard_method_validates() {
+    let method = Method::new(WILDCARD).block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate(&module.name, "my_unregistered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn wildcard_module() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+
+    let result = cennznut.get_module("my_unregistered_module");
+    assert_ne!(result, None);
+}
+
+#[test]
+fn wildcard_module_validates() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("my_unregistered_module", "registered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn wildcard_module_wildcard_method_validates() {
+    let method = Method::new(WILDCARD).block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("my_unregistered_module", "my_unregistered_method", &args),
+        Ok(())
+    );
+}
+
+#[test]
+fn unregistered_module_fails_validation() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("registered_module")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("my_unregistered_module", "registered_method", &args),
+        Err(ValidationErr::NoPermission(Domain::Module))
+    );
+}
+
+#[test]
+fn unregistered_method_fails_validation() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let module = Module::new("registered_module")
+        .block_cooldown(1)
+        .methods(methods);
+    let modules = make_modules(&module);
+
+    let cennznut = CENNZnutV0 { modules };
+    let args = [];
+
+    assert_eq!(
+        cennznut.validate("registered_module", "my_unregistered_method", &args),
+        Err(ValidationErr::NoPermission(Domain::Method))
+    );
+}
+
+#[test]
+fn registered_methods_have_priority_over_wildcard_methods() {
+    let wild_method = Method::new(WILDCARD).block_cooldown(123);
+    let registered_method = Method::new("registered_method").block_cooldown(123);
+
+    let mut methods: Vec<(String, Method)> = Vec::default();
+    methods.push((wild_method.name.clone(), wild_method.clone()));
+    methods.push((registered_method.name.clone(), registered_method.clone()));
+
+    let module = Module::new("module_test")
+        .block_cooldown(1)
+        .methods(methods);
+
+    let result = module.get_method("registered_method").unwrap();
+
+    assert_eq!(result.name, "registered_method");
+}
+
+#[test]
+fn registered_modules_have_priority_over_wildcard_modules() {
+    let method = Method::new("registered_method").block_cooldown(123);
+    let methods = make_methods(&method);
+
+    let wild_module = Module::new(WILDCARD)
+        .block_cooldown(123)
+        .methods(methods.clone());
+    let registered_module = Module::new("registered_module")
+        .block_cooldown(123)
+        .methods(methods);
+
+    let mut modules: Vec<(String, Module)> = Vec::default();
+    modules.push((wild_module.name.clone(), wild_module.clone()));
+    modules.push((registered_module.name.clone(), registered_module.clone()));
+
+    let cennznut = CENNZnutV0 { modules };
+
+    let result = cennznut.get_module("registered_module").unwrap();
+
+    assert_eq!(result.name, "registered_module");
 }
