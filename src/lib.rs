@@ -9,6 +9,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+use crate::CENNZnut::V0;
 use alloc::borrow::ToOwned;
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::{String, ToString};
@@ -229,8 +230,6 @@ pub enum CENNZnut {
 
 impl Encode for CENNZnut {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        use CENNZnut::*;
-
         match &self {
             V0(inner) => inner.encode_to(buf),
         }
@@ -239,8 +238,6 @@ impl Encode for CENNZnut {
 
 impl Decode for CENNZnut {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        use CENNZnut::*;
-
         let version = u16::from_le_bytes([
             input.read_byte()?.swap_bits(),
             input.read_byte()?.swap_bits(),
@@ -263,8 +260,6 @@ impl Validate for CENNZnut {
         method_name: &str,
         args: &[PactType],
     ) -> Result<(), ValidationErr> {
-        use CENNZnut::*;
-
         match &self {
             V0(inner) => inner.validate(module_name, method_name, args),
         }
@@ -273,16 +268,12 @@ impl Validate for CENNZnut {
 
 impl GetModule for CENNZnut {
     fn get_module(&self, module: &str) -> Option<&Module> {
-        use CENNZnut::*;
-
         match &self {
             V0(inner) => inner.get_module(module),
         }
     }
 
     fn get_modules(&self) -> &ModuleVec {
-        use CENNZnut::*;
-
         match &self {
             V0(inner) => &inner.modules,
         }
