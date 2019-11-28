@@ -312,7 +312,7 @@ impl GetModule for CENNZnutV0 {
     }
 
     fn get_modules(&self) -> &ModuleVec {
-        return &self.modules;
+        &self.modules
     }
 }
 
