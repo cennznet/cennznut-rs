@@ -11,12 +11,12 @@ extern crate std as alloc;
 
 use crate::CENNZnut::V0;
 use alloc::borrow::ToOwned;
-use core::convert::TryFrom;
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use core::convert::TryFrom;
 use pact::compiler::Contract;
 use pact::interpreter::{interpret, types::PactType};
 
