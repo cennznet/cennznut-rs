@@ -11,7 +11,7 @@ extern crate std as alloc;
 
 use crate::CENNZnut::V0;
 use alloc::borrow::ToOwned;
-use alloc::convert::TryFrom;
+use core::convert::TryFrom;
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
