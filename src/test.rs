@@ -157,6 +157,12 @@ fn it_works_decode_with_method_cooldown() {
     assert_eq!(
         c0.get_module("module_test")
             .expect("module exists")
+            .block_cooldown,
+        Some(86_400)
+    );
+    assert_eq!(
+        c0.get_module("module_test")
+            .expect("module exists")
             .get_method("method_test")
             .expect("method exists")
             .block_cooldown,
