@@ -9,12 +9,14 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+use crate::CENNZnut::V0;
 use alloc::borrow::ToOwned;
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use core::convert::TryFrom;
 use pact::compiler::Contract;
 use pact::interpreter::{interpret, types::PactType};
 
@@ -62,6 +64,11 @@ impl Display for ValidationErr {
 
 pub trait Validate {
     fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr>;
+}
+
+pub trait PartialDecode: Sized {
+    /// decode an input which is not including the version as the up front two bytes
+    fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error>;
 }
 
 /// A CENNZnet permission domain module method
@@ -207,6 +214,60 @@ impl Encode for Module {
     }
 }
 
+#[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
+pub enum CENNZnut {
+    V0(CENNZnutV0),
+}
+
+#[allow(unreachable_patterns)]
+impl TryFrom<CENNZnut> for CENNZnutV0 {
+    type Error = codec::Error;
+    fn try_from(v: CENNZnut) -> Result<Self, Self::Error> {
+        match v {
+            V0(inner) => Ok(inner),
+            _ => Err(codec::Error::from("CENNZnut version is not 0")),
+        }
+    }
+}
+
+impl Encode for CENNZnut {
+    fn encode_to<T: Output>(&self, buf: &mut T) {
+        match &self {
+            V0(inner) => inner.encode_to(buf),
+        }
+    }
+}
+
+impl Decode for CENNZnut {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        let version = u16::from_le_bytes([
+            input.read_byte()?.swap_bits(),
+            input.read_byte()?.swap_bits(),
+        ]);
+
+        match version {
+            0 => match CENNZnutV0::partial_decode(input) {
+                Ok(inner) => Ok(V0(inner)),
+                Err(e) => Err(e),
+            },
+            _ => Err(codec::Error::from("unexpected version")),
+        }
+    }
+}
+
+impl Validate for CENNZnut {
+    fn validate(
+        &self,
+        module_name: &str,
+        method_name: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr> {
+        match &self {
+            V0(inner) => inner.validate(module_name, method_name, args),
+        }
+    }
+}
+
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
@@ -244,16 +305,8 @@ impl Encode for CENNZnutV0 {
     }
 }
 
-impl Decode for CENNZnutV0 {
-    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let version = u16::from_le_bytes([
-            input.read_byte()?.swap_bits(),
-            input.read_byte()?.swap_bits(),
-        ]);
-        if version != 0 {
-            return Err(codec::Error::from("expected version : 0"));
-        }
-
+impl PartialDecode for CENNZnutV0 {
+    fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let module_count = (input.read_byte()?.swap_bits()).saturating_add(1);
         let mut modules = Vec::<(String, Module)>::default();
 
@@ -263,6 +316,19 @@ impl Decode for CENNZnutV0 {
         }
 
         Ok(Self { modules })
+    }
+}
+
+impl Decode for CENNZnutV0 {
+    fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
+        let version = u16::from_le_bytes([
+            input.read_byte()?.swap_bits(),
+            input.read_byte()?.swap_bits(),
+        ]);
+        if version != 0 {
+            return Err(codec::Error::from("expected version : 0"));
+        }
+        Self::partial_decode(input)
     }
 }
 
