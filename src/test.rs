@@ -8,7 +8,7 @@ use crate::{
 };
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
-use pact::compiler::{Contract, DataTable};
+use pact::contract::{Contract, DataTable};
 use pact::interpreter::OpCode;
 use pact::types::{Numeric, PactType, StringLike};
 use std::string::String;

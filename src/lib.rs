@@ -17,7 +17,7 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
-use pact::compiler::Contract;
+use pact::contract::Contract;
 use pact::interpreter::{interpret, types::PactType};
 
 mod test;
