@@ -23,7 +23,7 @@ use pact::interpreter::{interpret, types::PactType};
 mod test;
 
 /// A CENNZnet permission domain
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Domain {
     Method,
     MethodArguments,
@@ -43,7 +43,7 @@ impl Display for Domain {
 }
 
 /// Error which may occur while validating the permission domain
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ValidationErr {
     NoPermission(Domain),
     ConstraintsInterpretation,
