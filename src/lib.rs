@@ -30,14 +30,14 @@ extern crate std as alloc;
 
 use alloc::fmt::{self, Display, Formatter};
 
+mod cennznut;
 mod method;
 mod module;
-mod cennznut;
 mod validation;
 
+pub use crate::cennznut::v0::CENNZnut as CENNZnutV0;
 pub use crate::method::Method;
 pub use crate::module::Module;
-pub use crate::cennznut::v0::CENNZnut as CENNZnutV0;
 pub use crate::validation::{Validate, ValidationErr};
 
 pub const WILDCARD: &str = "*";
