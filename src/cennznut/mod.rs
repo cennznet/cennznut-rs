@@ -19,7 +19,6 @@
 //! Collection of versioned `CENNZnuts`
 //!
 
-#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
 
 #[cfg(not(feature = "std"))]

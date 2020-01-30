@@ -19,7 +19,6 @@
 //! Delegated runtime module permissioning of CENNZnut for use in CENNZnet
 //!
 
-#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
 
 #[cfg(not(feature = "std"))]

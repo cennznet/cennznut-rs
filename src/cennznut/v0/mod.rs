@@ -19,7 +19,6 @@
 //! Version 0 CENNZnut type.
 //!
 
-#![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
 #![allow(clippy::module_name_repetitions)]
 
