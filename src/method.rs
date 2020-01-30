@@ -32,7 +32,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use pact::compiler::Contract;
+use pact::contract::Contract;
 
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
