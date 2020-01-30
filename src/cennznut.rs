@@ -16,7 +16,7 @@
 //!
 //! # CENNZnut
 //!
-//! Collection of versioned CENNZnuts
+//! Collection of versioned `CENNZnuts`
 //!
 
 pub mod v0;
