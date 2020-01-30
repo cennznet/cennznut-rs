@@ -1,5 +1,10 @@
 version: 2
 jobs:
+  complete:
+    docker:
+      - image: circleci/rust:1.37.0
+    steps:
+      - run: echo "successfully built and tested"
   build:
     docker:
       - image: circleci/rust:1.37.0
@@ -8,7 +13,7 @@ jobs:
       - run:
           name: setup
           command: |
-            rustup component add rustfmt clippy --toolchain 1.37.0-x86_64-unknown-linux-gnu
+            rustup component add rustfmt --toolchain 1.37.0-x86_64-unknown-linux-gnu
             rustup install nightly
       - run:
           name: cargo check
@@ -21,21 +26,48 @@ jobs:
             cargo fmt --version
             cargo fmt -- --check
       - run:
+          name: "Check 'no std' build"
+          command: |
+            cargo +nightly --version --verbose
+            cargo +nightly check --no-default-features
+  test:
+    docker:
+      - image: circleci/rust:1.37.0
+    steps:
+      - checkout
+      - run:
+          name: setup
+          command: |
+            rustup install nightly
+      - run:
           name: cargo test
           command: |
             cargo test
+  clippy:
+    docker:
+      - image: circleci/rust:1.37.0
+    steps:
+      - checkout
+      - run:
+          name: setup
+          command: |
+            rustup component add clippy --toolchain 1.37.0-x86_64-unknown-linux-gnu
+            rustup install nightly
       - run:
           name: cargo clippy
           command: |
             cargo clean
             cargo clippy -- -D warnings
-      - run:
-          name: "Check 'no std' build"
-          command: |
-            cargo +nightly --version --verbose
-            cargo +nightly check --no-default-features
 workflows:
   version: 2
   run-build:
     jobs:
       - build
+      - test
+      - clippy
+      - complete:
+        requires:
+          - build
+          - test
+          - clippy
+
