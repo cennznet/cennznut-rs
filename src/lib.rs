@@ -32,13 +32,13 @@ use alloc::fmt::{self, Display, Formatter};
 
 mod method;
 mod module;
-mod v0;
+mod cennznut;
 mod validation;
 
-pub use method::Method;
-pub use module::Module;
-pub use v0::CENNZnut as CENNZnutV0;
-pub use validation::{Validate, ValidationErr};
+pub use crate::method::Method;
+pub use crate::module::Module;
+pub use crate::cennznut::v0::CENNZnut as CENNZnutV0;
+pub use crate::validation::{Validate, ValidationErr};
 
 pub const WILDCARD: &str = "*";
 
