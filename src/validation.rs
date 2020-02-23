@@ -17,16 +17,16 @@ extern crate std as alloc;
 use alloc::fmt::{self, Display, Formatter};
 use pact::interpreter::types::PactType;
 
-use crate::Domain;
+// use crate::Domain;
 
 /// Error which may occur while validating the permission domain
 #[derive(Debug, Eq, PartialEq)]
-pub enum ValidationErr {
+pub enum ValidationErr<Domain: Display> {
     NoPermission(Domain),
     ConstraintsInterpretation,
 }
 
-impl Display for ValidationErr {
+impl <Domain: Display> Display for ValidationErr<Domain> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::NoPermission(permission_domain) => write!(
@@ -39,6 +39,6 @@ impl Display for ValidationErr {
     }
 }
 
-pub trait Validate {
-    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr>;
+pub trait Validate<Domain: Display> {
+    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr<Domain>>;
 }

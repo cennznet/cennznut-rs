@@ -19,8 +19,8 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 
-use crate::Method;
-use crate::WILDCARD;
+use super::method::Method;
+use super::WILDCARD;
 
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
