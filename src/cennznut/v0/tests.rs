@@ -6,13 +6,11 @@
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{
-    CENNZnut, CENNZnutV0, TryFrom, Validate, ValidationErr,
-};
-use super::WILDCARD;
 use super::method::Method;
 use super::module::Module;
+use super::WILDCARD;
 use crate::cennznut::ModuleDomain;
+use crate::{CENNZnut, CENNZnutV0, TryFrom, Validate, ValidationErr};
 
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};

@@ -26,7 +26,7 @@ pub enum ValidationErr<Domain: Display> {
     ConstraintsInterpretation,
 }
 
-impl <Domain: Display> Display for ValidationErr<Domain> {
+impl<Domain: Display> Display for ValidationErr<Domain> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::NoPermission(permission_domain) => write!(
@@ -40,5 +40,10 @@ impl <Domain: Display> Display for ValidationErr<Domain> {
 }
 
 pub trait Validate<Domain: Display> {
-    fn validate(&self, module: &str, method: &str, args: &[PactType]) -> Result<(), ValidationErr<Domain>>;
+    fn validate(
+        &self,
+        module: &str,
+        method: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr<Domain>>;
 }

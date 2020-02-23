@@ -6,11 +6,9 @@
 #![warn(clippy::pedantic)]
 #![cfg(test)]
 
-use crate::{
-    CENNZnut,
-};
+use crate::CENNZnut;
 
-use codec::{Decode};
+use codec::Decode;
 use std::vec::Vec;
 
 #[test]
@@ -42,4 +40,3 @@ fn it_fails_decode_with_invalid_constraints() {
         Err(codec::Error::from("invalid constraints codec")),
     );
 }
-

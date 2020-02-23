@@ -24,14 +24,14 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::{interpret, types::PactType};
 
-pub mod module;
 pub mod method;
+pub mod module;
 
-use module::Module;
 use super::ModuleDomain;
 use crate::PartialDecode;
 use crate::Validate;
 use crate::ValidationErr;
+use module::Module;
 
 pub const WILDCARD: &str = "*";
 
@@ -117,7 +117,9 @@ impl Validate<ModuleDomain> for CENNZnutV0 {
         if let Some(contract) = method.get_pact() {
             match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
                 Ok(true) => {}
-                Ok(false) => return Err(ValidationErr::NoPermission(ModuleDomain::MethodArguments)),
+                Ok(false) => {
+                    return Err(ValidationErr::NoPermission(ModuleDomain::MethodArguments))
+                }
                 Err(_) => return Err(ValidationErr::ConstraintsInterpretation),
             }
         }
