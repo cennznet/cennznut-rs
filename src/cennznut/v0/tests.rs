@@ -500,7 +500,7 @@ fn wildcard_method() {
         .methods(methods);
 
     let result = module.get_method("my_unregistered_method");
-    assert_ne!(result, None);
+    assert_eq!(result, Some(&method));
 }
 
 #[test]
@@ -537,7 +537,7 @@ fn wildcard_module() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let result = cennznut.get_module("my_unregistered_module");
-    assert_ne!(result, None);
+    assert_eq!(result, Some(&module));
 }
 
 #[test]
