@@ -17,8 +17,6 @@ extern crate std as alloc;
 use alloc::fmt::{self, Display, Formatter};
 use pact::interpreter::types::PactType;
 
-// use crate::Domain;
-
 /// Error which may occur while validating the permission domain
 #[derive(Debug, Eq, PartialEq)]
 pub enum ValidationErr<Domain: Display> {

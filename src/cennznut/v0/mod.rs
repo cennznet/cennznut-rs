@@ -15,7 +15,7 @@ extern crate alloc;
 extern crate std as alloc;
 
 #[cfg(test)]
-pub mod tests;
+mod tests;
 
 use alloc::borrow::ToOwned;
 use alloc::string::String;
