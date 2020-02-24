@@ -24,6 +24,7 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::{interpret, types::PactType};
 
+pub mod contract;
 pub mod method;
 pub mod module;
 
