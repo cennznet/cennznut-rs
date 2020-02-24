@@ -88,6 +88,10 @@ impl Encode for CENNZnutV0 {
         for (_, module) in &self.modules {
             module.encode_to(buf);
         }
+
+        #[allow(clippy::cast_possible_truncation)]
+        let contract_count = (self.contracts.len() as u8).swap_bits();
+        buf.push_byte(contract_count);
     }
 }
 
@@ -147,12 +151,12 @@ impl Validate<ModuleDomain> for CENNZnutV0 {
     }
 }
 
+
+
 #[cfg(test)]
 mod test {
     use super::CENNZnutV0;
     use super::Contract;
-
-
 
     #[test]
     fn it_gets_no_contract_from_empty_list() {
@@ -237,7 +241,5 @@ mod test {
 
         assert_eq!(cennznut.get_contract([0x12_u8; 32]), Some(&contract_b));
     }
-
-
 
 }
