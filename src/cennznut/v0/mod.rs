@@ -33,8 +33,8 @@ use crate::PartialDecode;
 use crate::Validate;
 use crate::ValidationErr;
 
-use module::Module;
 use contract::Contract;
+use module::Module;
 
 pub const WILDCARD: &str = "*";
 
@@ -42,7 +42,7 @@ pub const WILDCARD: &str = "*";
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(String, Module)>,
-    pub contracts: Vec<([u8; 32], Contract)>
+    pub contracts: Vec<([u8; 32], Contract)>,
 }
 
 impl CENNZnutV0 {
@@ -69,7 +69,7 @@ impl CENNZnutV0 {
             if address == &contract {
                 outcome = Some(c);
                 break;
-            } else if address == &[0; 32]{
+            } else if address == &[0; 32] {
                 outcome = Some(c);
             }
         }
@@ -92,6 +92,10 @@ impl Encode for CENNZnutV0 {
         #[allow(clippy::cast_possible_truncation)]
         let contract_count = (self.contracts.len() as u8).swap_bits();
         buf.push_byte(contract_count);
+
+        for (_, contract) in &self.contracts {
+            contract.encode_to(buf);
+        }
     }
 }
 
@@ -151,8 +155,6 @@ impl Validate<ModuleDomain> for CENNZnutV0 {
     }
 }
 
-
-
 #[cfg(test)]
 mod test {
     use super::CENNZnutV0;
@@ -208,9 +210,7 @@ mod test {
         let contract_b = Contract::new(&[0x12_u8; 32]);
 
         contracts.push((contract_a.address, contract_a));
-        contracts.push(
-            (contract_wildcard.address, contract_wildcard.clone())
-        );
+        contracts.push((contract_wildcard.address, contract_wildcard.clone()));
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
@@ -218,7 +218,10 @@ mod test {
             contracts,
         };
 
-        assert_eq!(cennznut.get_contract([0x55_u8; 32]), Some(&contract_wildcard));
+        assert_eq!(
+            cennznut.get_contract([0x55_u8; 32]),
+            Some(&contract_wildcard)
+        );
     }
 
     #[test]
@@ -229,9 +232,7 @@ mod test {
         let contract_b = Contract::new(&[0x12_u8; 32]);
 
         contracts.push((contract_a.address, contract_a));
-        contracts.push(
-            (contract_wildcard.address, contract_wildcard)
-        );
+        contracts.push((contract_wildcard.address, contract_wildcard));
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
@@ -241,5 +242,4 @@ mod test {
 
         assert_eq!(cennznut.get_contract([0x12_u8; 32]), Some(&contract_b));
     }
-
 }

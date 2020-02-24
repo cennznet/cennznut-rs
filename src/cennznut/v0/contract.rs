@@ -26,7 +26,7 @@ pub struct Contract {
 impl Contract {
     pub fn new(address: &[u8; 32]) -> Self {
         Self {
-            address: address.clone(),
+            address: *address,
             block_cooldown: None,
         }
     }
@@ -51,7 +51,7 @@ impl Encode for Contract {
             has_cooldown_byte |= 0b0000_0001_u8;
         }
         buf.push_byte(has_cooldown_byte.swap_bits());
-        let address = self.address.clone();
+        let address = self.address;
         buf.write(&address);
 
         if let Some(cooldown) = self.block_cooldown {
