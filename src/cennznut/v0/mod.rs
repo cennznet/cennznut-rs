@@ -82,7 +82,7 @@ impl Encode for CENNZnutV0 {
         buf.write(&[0, 0]);
 
         #[allow(clippy::cast_possible_truncation)]
-        let module_count = ((self.modules.len() as u8).saturating_sub(1)).swap_bits();
+        let module_count = (self.modules.len() as u8).swap_bits();
         buf.push_byte(module_count);
 
         for (_, module) in &self.modules {
@@ -97,7 +97,7 @@ impl Encode for CENNZnutV0 {
 
 impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let module_count = (input.read_byte()?.swap_bits()).saturating_add(1);
+        let module_count = input.read_byte()?.swap_bits();
         let mut modules = Vec::<(String, Module)>::default();
         let contracts = Vec::<([u8; 32], Contract)>::default();
 
