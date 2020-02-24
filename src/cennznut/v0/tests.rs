@@ -8,6 +8,7 @@
 
 use super::method::Method;
 use super::module::Module;
+use super::contract::Contract;
 use super::WILDCARD;
 use crate::cennznut::ModuleDomain;
 use crate::{CENNZnut, CENNZnutV0, TryFrom, Validate, ValidationErr};
@@ -32,6 +33,8 @@ fn make_modules(module: &Module) -> Vec<(String, Module)> {
     modules
 }
 
+
+
 #[test]
 fn it_works_encode() {
     let method = Method::new("method_test");
@@ -40,7 +43,9 @@ fn it_works_encode() {
     let module = Module::new("module_test").methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let encoded = cennznut.encode();
 
     assert_eq!(
@@ -62,7 +67,9 @@ fn it_works_encode_one_module() {
     let module = Module::new("module_test").methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
@@ -97,7 +104,9 @@ fn it_works_encode_with_module_cooldown() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
@@ -137,7 +146,9 @@ fn it_works_encode_with_method_cooldown() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
@@ -204,7 +215,9 @@ fn it_works_encode_with_constraints() {
     let module = Module::new("module_test").methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let encoded = cennznut.encode();
 
     assert_eq!(
@@ -276,7 +289,9 @@ fn it_works_with_lots_of_things_codec() {
     modules.push((module.name.clone(), module.clone()));
     modules.push((module2.name.clone(), module2.clone()));
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     let encoded = vec![
         0, 0, 128, 160, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
@@ -316,7 +331,9 @@ fn it_validates() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
         PactType::Numeric(Numeric(123)),
         PactType::StringLike(StringLike(b"test")),
@@ -352,7 +369,9 @@ fn it_validates_error_with_bad_bytecode() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [PactType::StringLike(StringLike(b"test"))];
 
     assert_eq!(
@@ -383,7 +402,9 @@ fn it_validates_error_with_false_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
         PactType::Numeric(Numeric(321)),
         PactType::StringLike(StringLike(b"b")),
@@ -405,7 +426,9 @@ fn it_validates_with_empty_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
         PactType::Numeric(Numeric(0)),
         PactType::StringLike(StringLike(b"test")),
@@ -490,7 +513,9 @@ fn wildcard_method_validates() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
 
     assert_eq!(
@@ -507,7 +532,9 @@ fn wildcard_module() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     let result = cennznut.get_module("my_unregistered_module");
     assert_ne!(result, None);
@@ -521,7 +548,9 @@ fn wildcard_module_validates() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
 
     assert_eq!(
@@ -538,7 +567,9 @@ fn wildcard_module_wildcard_method_validates() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
 
     assert_eq!(
@@ -557,7 +588,9 @@ fn unregistered_module_fails_validation() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
 
     assert_eq!(
@@ -576,7 +609,9 @@ fn unregistered_method_fails_validation() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
 
     assert_eq!(
@@ -619,7 +654,9 @@ fn registered_modules_have_priority_over_wildcard_modules() {
     modules.push((wild_module.name.clone(), wild_module.clone()));
     modules.push((registered_module.name.clone(), registered_module.clone()));
 
-    let cennznut = CENNZnutV0 { modules };
+    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+
+    let cennznut = CENNZnutV0 { modules, contracts };
 
     let result = cennznut.get_module("registered_module").unwrap();
 

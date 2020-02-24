@@ -32,7 +32,9 @@ use super::ModuleDomain;
 use crate::PartialDecode;
 use crate::Validate;
 use crate::ValidationErr;
+
 use module::Module;
+use contract::Contract;
 
 pub const WILDCARD: &str = "*";
 
@@ -40,6 +42,7 @@ pub const WILDCARD: &str = "*";
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(String, Module)>,
+    pub contracts: Vec<([u8; 32], Contract)>
 }
 
 impl CENNZnutV0 {
@@ -53,6 +56,21 @@ impl CENNZnutV0 {
                 break;
             } else if name == WILDCARD {
                 outcome = Some(m);
+            }
+        }
+        outcome
+    }
+
+    /// Returns the contract, if it exists in the CENNZnut
+    /// Wildcard contracts (addr: 0) have lower priority than defined contracts
+    pub fn get_contract(&self, contract: [u8; 32]) -> Option<&Contract> {
+        let mut outcome: Option<&Contract> = None;
+        for (address, c) in &self.contracts {
+            if address == &contract {
+                outcome = Some(c);
+                break;
+            } else if address == &[0; 32]{
+                outcome = Some(c);
             }
         }
         outcome
@@ -77,13 +95,14 @@ impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let module_count = (input.read_byte()?.swap_bits()).saturating_add(1);
         let mut modules = Vec::<(String, Module)>::default();
+        let contracts = Vec::<([u8; 32], Contract)>::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
             modules.push((m.name.to_owned(), m));
         }
 
-        Ok(Self { modules })
+        Ok(Self { modules, contracts })
     }
 }
 
@@ -126,4 +145,99 @@ impl Validate<ModuleDomain> for CENNZnutV0 {
         }
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::CENNZnutV0;
+    use super::Contract;
+
+
+
+    #[test]
+    fn it_gets_no_contract_from_empty_list() {
+        let cennznut = CENNZnutV0 {
+            modules: Vec::default(),
+            contracts: Vec::default(),
+        };
+
+        assert_eq!(cennznut.get_contract([0x55; 32]), None);
+    }
+
+    #[test]
+    fn it_gets_no_contract_from_list() {
+        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let contract_a = Contract::new(&[0x45_u8; 32]);
+        let contract_b = Contract::new(&[0x12_u8; 32]);
+        contracts.push((contract_a.address, contract_a));
+        contracts.push((contract_b.address, contract_b));
+
+        let cennznut = CENNZnutV0 {
+            modules: Vec::default(),
+            contracts,
+        };
+
+        assert_eq!(cennznut.get_contract([0x55; 32]), None);
+    }
+
+    #[test]
+    fn it_gets_a_contract() {
+        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let contract_a = Contract::new(&[0x45_u8; 32]);
+        let contract_b = Contract::new(&[0x12_u8; 32]);
+        contracts.push((contract_a.address, contract_a));
+        contracts.push((contract_b.address, contract_b.clone()));
+
+        let cennznut = CENNZnutV0 {
+            modules: Vec::default(),
+            contracts,
+        };
+
+        assert_eq!(cennznut.get_contract([0x12_u8; 32]), Some(&contract_b));
+    }
+
+    #[test]
+    fn it_gets_a_wildcard() {
+        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let contract_a = Contract::new(&[0x45_u8; 32]);
+        let contract_wildcard = Contract::new(&[0x0_u8; 32]);
+        let contract_b = Contract::new(&[0x12_u8; 32]);
+
+        contracts.push((contract_a.address, contract_a));
+        contracts.push(
+            (contract_wildcard.address, contract_wildcard.clone())
+        );
+        contracts.push((contract_b.address, contract_b));
+
+        let cennznut = CENNZnutV0 {
+            modules: Vec::default(),
+            contracts,
+        };
+
+        assert_eq!(cennznut.get_contract([0x55_u8; 32]), Some(&contract_wildcard));
+    }
+
+    #[test]
+    fn it_gives_defined_contracts_prescedence_over_wildcards() {
+        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let contract_a = Contract::new(&[0x45_u8; 32]);
+        let contract_wildcard = Contract::new(&[0x0_u8; 32]);
+        let contract_b = Contract::new(&[0x12_u8; 32]);
+
+        contracts.push((contract_a.address, contract_a));
+        contracts.push(
+            (contract_wildcard.address, contract_wildcard)
+        );
+        contracts.push((contract_b.address, contract_b.clone()));
+
+        let cennznut = CENNZnutV0 {
+            modules: Vec::default(),
+            contracts,
+        };
+
+        assert_eq!(cennznut.get_contract([0x12_u8; 32]), Some(&contract_b));
+    }
+
+
+
 }
