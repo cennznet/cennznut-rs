@@ -180,14 +180,55 @@ mod test {
             0x35, 0x36, 0x37, 0x38,
         ]);
 
-        let r: Vec<u8> = contract.encode();
+        let result: Vec<u8> = contract.encode();
         assert_eq!(
-            r,
+            result,
             vec![
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x11, 0x12, 0x13, 0x14, 0x15,
                 0x16, 0x17, 0x18, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x31, 0x32, 0x33,
                 0x34, 0x35, 0x36, 0x37, 0x38,
             ]
         );
+    }
+
+    #[test]
+    fn it_encodes_wildcard_case() {
+        let has_cooldown_byte = 0x00;
+        let address_length: usize = 32;
+        let address_value: u8 = 0x00;
+        let expected_length: usize = address_length + 1;
+
+        let contract = Contract::wildcard();
+
+        let result: Vec<u8> = contract.encode();
+        assert_eq!(result.len(), expected_length);
+        assert_eq!(result[0], has_cooldown_byte);
+        for i in 0..address_length {
+            assert_eq!(result[i + 1], address_value);
+        }
+    }
+
+    #[test]
+    fn it_encodes_block_cooldown() {
+        // 0b1000_0000 = cooldown flag (note: bits get flipped)
+        let has_cooldown_byte = 0x80;
+        let address_length: usize = 32;
+        let cooldown_length: usize = 4;
+        let address_value: u8 = 0x00;
+        let expected_length: usize = address_length + cooldown_length + 1;
+
+        let contract = Contract::wildcard().block_cooldown(0x1337_b33f);
+
+        let result: Vec<u8> = contract.encode();
+        assert_eq!(result.len(), expected_length);
+        assert_eq!(result[0], has_cooldown_byte);
+        for i in 0..address_length {
+            assert_eq!(result[i + 1], address_value);
+        }
+        // 1337_b33f flipped becomes fccd_ecc8 (due to LE encoding)
+        assert_eq!(result[address_length + 1], 0xfc);
+        assert_eq!(result[address_length + 2], 0xcd);
+        assert_eq!(result[address_length + 3], 0xec);
+        assert_eq!(result[address_length + 4], 0xc8);
     }
 }
