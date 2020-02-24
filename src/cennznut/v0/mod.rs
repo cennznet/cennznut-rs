@@ -14,6 +14,9 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+#[cfg(test)]
+mod tests;
+
 use alloc::borrow::ToOwned;
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -21,12 +24,16 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::{interpret, types::PactType};
 
-use crate::Domain;
-use crate::Module;
+pub mod method;
+pub mod module;
+
+use super::ModuleDomain;
 use crate::PartialDecode;
 use crate::Validate;
 use crate::ValidationErr;
-use crate::WILDCARD;
+use module::Module;
+
+pub const WILDCARD: &str = "*";
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -92,7 +99,7 @@ impl Decode for CENNZnutV0 {
     }
 }
 
-impl Validate for CENNZnutV0 {
+impl Validate<ModuleDomain> for CENNZnutV0 {
     /// Validates a CENNZnut by (1) looking for `module_name` and `method_name` and (2) executing the
     /// Pact interpreter if constraints exist
     fn validate(
@@ -100,17 +107,19 @@ impl Validate for CENNZnutV0 {
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr> {
+    ) -> Result<(), ValidationErr<ModuleDomain>> {
         let module = self
             .get_module(module_name)
-            .ok_or_else(|| ValidationErr::NoPermission(Domain::Module))?;
+            .ok_or_else(|| ValidationErr::NoPermission(ModuleDomain::Module))?;
         let method = module
             .get_method(method_name)
-            .ok_or_else(|| ValidationErr::NoPermission(Domain::Method))?;
+            .ok_or_else(|| ValidationErr::NoPermission(ModuleDomain::Method))?;
         if let Some(contract) = method.get_pact() {
             match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
                 Ok(true) => {}
-                Ok(false) => return Err(ValidationErr::NoPermission(Domain::MethodArguments)),
+                Ok(false) => {
+                    return Err(ValidationErr::NoPermission(ModuleDomain::MethodArguments))
+                }
                 Err(_) => return Err(ValidationErr::ConstraintsInterpretation),
             }
         }

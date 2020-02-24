@@ -12,6 +12,8 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std as alloc;
 
+use alloc::fmt::{self, Display, Formatter};
+
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::types::PactType;
@@ -25,6 +27,24 @@ pub mod v0;
 use core::convert::TryFrom;
 use v0::CENNZnutV0;
 use CENNZnut::V0;
+
+/// A CENNZnet module permission domain
+#[derive(Debug, Eq, PartialEq)]
+pub enum ModuleDomain {
+    Method,
+    MethodArguments,
+    Module,
+}
+
+impl Display for ModuleDomain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Method => write!(f, "method"),
+            Self::MethodArguments => write!(f, "method arguments"),
+            Self::Module => write!(f, "module"),
+        }
+    }
+}
 
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub enum CENNZnut {
@@ -67,13 +87,13 @@ impl Decode for CENNZnut {
     }
 }
 
-impl Validate for CENNZnut {
+impl Validate<ModuleDomain> for CENNZnut {
     fn validate(
         &self,
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr> {
+    ) -> Result<(), ValidationErr<ModuleDomain>> {
         match &self {
             V0(inner) => inner.validate(module_name, method_name, args),
         }
