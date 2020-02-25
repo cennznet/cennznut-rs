@@ -83,10 +83,6 @@ impl Decode for Contract {
             None
         };
 
-        if Some(0) != input.remaining_len().unwrap() {
-            return Err(codec::Error::from("payload too long"));
-        }
-
         Ok(Self {
             address,
             block_cooldown,
@@ -271,17 +267,14 @@ mod test {
     }
 
     #[test]
-    fn it_throws_error_on_unannounced_bytes() {
+    fn it_ignores_unannounced_bytes() {
         let encoded = vec![
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0xfc, 0xcd, 0xec, 0xc8,
         ];
 
-        assert_eq!(
-            Contract::decode(&mut &encoded[..]),
-            Err(codec::Error::from("payload too long")),
-        );
+        Contract::decode(&mut &encoded[..]).expect("it works");
     }
 
     #[test]

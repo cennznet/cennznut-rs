@@ -103,11 +103,18 @@ impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let module_count = input.read_byte()?.swap_bits();
         let mut modules = Vec::<(String, Module)>::default();
-        let contracts = Vec::<([u8; 32], Contract)>::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
             modules.push((m.name.to_owned(), m));
+        }
+
+        let contract_count = input.read_byte()?.swap_bits();
+        let mut contracts = Vec::<([u8; 32], Contract)>::default();
+
+        for _ in 0..contract_count {
+            let c: Contract = Decode::decode(input)?;
+            contracts.push((c.address, c));
         }
 
         Ok(Self { modules, contracts })
