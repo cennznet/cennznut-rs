@@ -28,5 +28,9 @@ mod test;
 
 pub trait PartialDecode: Sized {
     /// decode an input which is not including the version as the up front two bytes
+    ///
+    /// # Errors
+    ///
+    /// On failure, returns a `codec::Error`
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error>;
 }

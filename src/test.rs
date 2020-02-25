@@ -25,7 +25,7 @@ fn it_fails_decode_with_invalid_constraints() {
 
     let encoded_with_bad_type_id: Vec<u8> = [encoded_cennznut.clone(), bad_type_id].concat();
     let encoded_with_n_too_short: Vec<u8> = [encoded_cennznut.clone(), n_too_short].concat();
-    let encoded_with_n_too_large: Vec<u8> = [encoded_cennznut.clone(), n_too_large].concat();
+    let encoded_with_n_too_large: Vec<u8> = [encoded_cennznut, n_too_large].concat();
 
     assert_eq!(
         CENNZnut::decode(&mut &encoded_with_bad_type_id[..]),
