@@ -28,9 +28,8 @@ pub mod contract;
 pub mod method;
 pub mod module;
 
-use super::ModuleDomain;
+use super::{ContractDomain, RuntimeDomain};
 use crate::PartialDecode;
-use crate::Validate;
 use crate::ValidationErr;
 
 use contract::Contract;
@@ -134,30 +133,50 @@ impl Decode for CENNZnutV0 {
     }
 }
 
-impl Validate<ModuleDomain> for CENNZnutV0 {
-    /// Validates a CENNZnut by (1) looking for `module_name` and `method_name` and (2) executing the
-    /// Pact interpreter if constraints exist
-    fn validate(
+impl CENNZnutV0 {
+    /// Validates a CENNZnut runtime module by:
+    /// (1) looking for `module_name` and `method_name`
+    /// (2) executing the Pact interpreter if constraints exist
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `RuntimeDomain`
+    pub fn validate_module(
         &self,
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr<ModuleDomain>> {
+    ) -> Result<(), ValidationErr<RuntimeDomain>> {
         let module = self
             .get_module(module_name)
-            .ok_or_else(|| ValidationErr::NoPermission(ModuleDomain::Module))?;
+            .ok_or_else(|| ValidationErr::NoPermission(RuntimeDomain::Module))?;
         let method = module
             .get_method(method_name)
-            .ok_or_else(|| ValidationErr::NoPermission(ModuleDomain::Method))?;
+            .ok_or_else(|| ValidationErr::NoPermission(RuntimeDomain::Method))?;
         if let Some(contract) = method.get_pact() {
             match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
                 Ok(true) => {}
                 Ok(false) => {
-                    return Err(ValidationErr::NoPermission(ModuleDomain::MethodArguments))
+                    return Err(ValidationErr::NoPermission(RuntimeDomain::MethodArguments))
                 }
                 Err(_) => return Err(ValidationErr::ConstraintsInterpretation),
             }
         }
+        Ok(())
+    }
+
+    /// Validates a CENNZnut smart contract by
+    /// (1) looking for `contract_address`
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `ContractDomain`
+    pub fn validate_contract(
+        &self,
+        contract_address: [u8; 32],
+    ) -> Result<(), ValidationErr<ContractDomain>> {
+        self.get_contract(contract_address)
+            .ok_or_else(|| ValidationErr::NoPermission(ContractDomain::Contract))?;
         Ok(())
     }
 }

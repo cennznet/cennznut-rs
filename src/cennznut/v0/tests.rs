@@ -10,8 +10,8 @@ use super::contract::Contract;
 use super::method::Method;
 use super::module::Module;
 use super::WILDCARD;
-use crate::cennznut::ModuleDomain;
-use crate::{CENNZnut, CENNZnutV0, TryFrom, Validate, ValidationErr};
+use crate::cennznut::{ContractDomain, RuntimeDomain};
+use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
@@ -425,19 +425,19 @@ fn it_works_with_lots_of_things_codec() {
     let method2 = Method::new("method_test2").block_cooldown(321);
 
     let mut methods: Vec<(String, Method)> = Vec::default();
-    methods.push((method.name.clone(), method.clone()));
-    methods.push((method2.name.clone(), method2.clone()));
+    methods.push((method.name.clone(), method));
+    methods.push((method2.name.clone(), method2));
 
     let module = Module::new("module_test")
         .block_cooldown(86_400)
         .methods(methods.clone());
     let module2 = Module::new("module_test2")
         .block_cooldown(55_555)
-        .methods(methods.clone());
+        .methods(methods);
 
     let mut modules: Vec<(String, Module)> = Vec::default();
-    modules.push((module.name.clone(), module.clone()));
-    modules.push((module2.name.clone(), module2.clone()));
+    modules.push((module.name.clone(), module));
+    modules.push((module2.name.clone(), module2));
 
     let contracts: Vec<([u8; 32], Contract)> = Vec::default();
 
@@ -460,7 +460,7 @@ fn it_works_with_lots_of_things_codec() {
 }
 
 #[test]
-fn it_validates() {
+fn it_validates_modules() {
     let contract = PactContract {
         data_table: DataTable::new(vec![
             PactType::Numeric(Numeric(123)),
@@ -473,7 +473,7 @@ fn it_validates() {
 
     let method = Method::new("method_test")
         .block_cooldown(123)
-        .constraints(constraints.clone());
+        .constraints(constraints);
     let methods = make_methods(&method);
 
     let module = Module::new("module_test")
@@ -489,19 +489,61 @@ fn it_validates() {
         PactType::StringLike(StringLike(b"test")),
     ];
 
-    assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
     assert_eq!(
-        cennznut.validate("module_test2", &method.name, &args),
-        Err(ValidationErr::NoPermission(ModuleDomain::Module))
+        cennznut.validate_module(&module.name, &method.name, &args),
+        Ok(())
     );
     assert_eq!(
-        cennznut.validate(&module.name, "method_test2", &args),
-        Err(ValidationErr::NoPermission(ModuleDomain::Method))
+        cennznut.validate_module("module_test2", &method.name, &args),
+        Err(ValidationErr::NoPermission(RuntimeDomain::Module))
+    );
+    assert_eq!(
+        cennznut.validate_module(&module.name, "method_test2", &args),
+        Err(ValidationErr::NoPermission(RuntimeDomain::Method))
     );
 }
 
 #[test]
-fn it_validates_error_with_bad_bytecode() {
+fn it_validates_contracts() {
+    let modules: Vec<(String, Module)> = Vec::default();
+
+    let contract = Contract::new(&[0x12_u8; 32]);
+    let contracts = make_contracts(&contract);
+
+    let cennznut = CENNZnutV0 { modules, contracts };
+
+    assert_eq!(cennznut.validate_contract(contract.address), Ok(()));
+}
+
+#[test]
+fn it_invalidates_missing_contract() {
+    let modules: Vec<(String, Module)> = Vec::default();
+
+    let contract = Contract::new(&[0x12_u8; 32]);
+    let contracts = make_contracts(&contract);
+
+    let cennznut = CENNZnutV0 { modules, contracts };
+
+    assert_eq!(
+        cennznut.validate_contract([0x34_u8; 32]),
+        Err(ValidationErr::NoPermission(ContractDomain::Contract))
+    );
+}
+
+#[test]
+fn it_validates_wildcard_contract() {
+    let modules: Vec<(String, Module)> = Vec::default();
+
+    let contract = Contract::wildcard();
+    let contracts = make_contracts(&contract);
+
+    let cennznut = CENNZnutV0 { modules, contracts };
+
+    assert_eq!(cennznut.validate_contract(contract.address), Ok(()));
+}
+
+#[test]
+fn it_validate_modules_error_with_bad_bytecode() {
     let contract = PactContract {
         data_table: DataTable::new(vec![PactType::StringLike(StringLike(b"test"))]),
         bytecode: [OpCode::GT.into(), 0, 0, 1, 0].to_vec(),
@@ -511,7 +553,7 @@ fn it_validates_error_with_bad_bytecode() {
 
     let method = Method::new("method_test")
         .block_cooldown(123)
-        .constraints(constraints.clone());
+        .constraints(constraints);
     let methods = make_methods(&method);
 
     let module = Module::new("module_test")
@@ -525,13 +567,13 @@ fn it_validates_error_with_bad_bytecode() {
     let args = [PactType::StringLike(StringLike(b"test"))];
 
     assert_eq!(
-        cennznut.validate(&module.name, &method.name, &args),
+        cennznut.validate_module(&module.name, &method.name, &args),
         Err(ValidationErr::ConstraintsInterpretation)
     );
 }
 
 #[test]
-fn it_validates_error_with_false_constraints() {
+fn it_validate_modules_error_with_false_constraints() {
     let contract = PactContract {
         data_table: DataTable::new(vec![
             PactType::Numeric(Numeric(123)),
@@ -544,7 +586,7 @@ fn it_validates_error_with_false_constraints() {
 
     let method = Method::new("method_test")
         .block_cooldown(123)
-        .constraints(constraints.clone());
+        .constraints(constraints);
     let methods = make_methods(&method);
 
     let module = Module::new("module_test")
@@ -561,13 +603,13 @@ fn it_validates_error_with_false_constraints() {
     ];
 
     assert_eq!(
-        cennznut.validate(&module.name, &method.name, &args),
-        Err(ValidationErr::NoPermission(ModuleDomain::MethodArguments))
+        cennznut.validate_module(&module.name, &method.name, &args),
+        Err(ValidationErr::NoPermission(RuntimeDomain::MethodArguments))
     );
 }
 
 #[test]
-fn it_validates_with_empty_constraints() {
+fn it_validate_modules_with_empty_constraints() {
     let method = Method::new("method_test").block_cooldown(123);
     let methods = make_methods(&method);
 
@@ -584,7 +626,10 @@ fn it_validates_with_empty_constraints() {
         PactType::StringLike(StringLike(b"test")),
     ];
 
-    assert_eq!(cennznut.validate(&module.name, &method.name, &args), Ok(()));
+    assert_eq!(
+        cennznut.validate_module(&module.name, &method.name, &args),
+        Ok(())
+    );
 }
 
 #[test]
@@ -654,7 +699,7 @@ fn wildcard_method() {
 }
 
 #[test]
-fn wildcard_method_validates() {
+fn wildcard_method_validate_modules() {
     let method = Method::new(WILDCARD).block_cooldown(123);
     let methods = make_methods(&method);
 
@@ -669,7 +714,7 @@ fn wildcard_method_validates() {
     let args = [];
 
     assert_eq!(
-        cennznut.validate(&module.name, "my_unregistered_method", &args),
+        cennznut.validate_module(&module.name, "my_unregistered_method", &args),
         Ok(())
     );
 }
@@ -691,7 +736,7 @@ fn wildcard_module() {
 }
 
 #[test]
-fn wildcard_module_validates() {
+fn wildcard_module_validate_modules() {
     let method = Method::new("registered_method").block_cooldown(123);
     let methods = make_methods(&method);
 
@@ -704,13 +749,13 @@ fn wildcard_module_validates() {
     let args = [];
 
     assert_eq!(
-        cennznut.validate("my_unregistered_module", "registered_method", &args),
+        cennznut.validate_module("my_unregistered_module", "registered_method", &args),
         Ok(())
     );
 }
 
 #[test]
-fn wildcard_module_wildcard_method_validates() {
+fn wildcard_module_wildcard_method_validate_modules() {
     let method = Method::new(WILDCARD).block_cooldown(123);
     let methods = make_methods(&method);
 
@@ -723,7 +768,7 @@ fn wildcard_module_wildcard_method_validates() {
     let args = [];
 
     assert_eq!(
-        cennznut.validate("my_unregistered_module", "my_unregistered_method", &args),
+        cennznut.validate_module("my_unregistered_module", "my_unregistered_method", &args),
         Ok(())
     );
 }
@@ -744,8 +789,8 @@ fn unregistered_module_fails_validation() {
     let args = [];
 
     assert_eq!(
-        cennznut.validate("my_unregistered_module", "registered_method", &args),
-        Err(ValidationErr::NoPermission(ModuleDomain::Module))
+        cennznut.validate_module("my_unregistered_module", "registered_method", &args),
+        Err(ValidationErr::NoPermission(RuntimeDomain::Module))
     );
 }
 
@@ -765,8 +810,8 @@ fn unregistered_method_fails_validation() {
     let args = [];
 
     assert_eq!(
-        cennznut.validate("registered_module", "my_unregistered_method", &args),
-        Err(ValidationErr::NoPermission(ModuleDomain::Method))
+        cennznut.validate_module("registered_module", "my_unregistered_method", &args),
+        Err(ValidationErr::NoPermission(RuntimeDomain::Method))
     );
 }
 
@@ -776,8 +821,8 @@ fn registered_methods_have_priority_over_wildcard_methods() {
     let registered_method = Method::new("registered_method").block_cooldown(123);
 
     let mut methods: Vec<(String, Method)> = Vec::default();
-    methods.push((wild_method.name.clone(), wild_method.clone()));
-    methods.push((registered_method.name.clone(), registered_method.clone()));
+    methods.push((wild_method.name.clone(), wild_method));
+    methods.push((registered_method.name.clone(), registered_method));
 
     let module = Module::new("module_test")
         .block_cooldown(1)
@@ -801,8 +846,8 @@ fn registered_modules_have_priority_over_wildcard_modules() {
         .methods(methods);
 
     let mut modules: Vec<(String, Module)> = Vec::default();
-    modules.push((wild_module.name.clone(), wild_module.clone()));
-    modules.push((registered_module.name.clone(), registered_module.clone()));
+    modules.push((wild_module.name.clone(), wild_module));
+    modules.push((registered_module.name.clone(), registered_module));
 
     let contracts: Vec<([u8; 32], Contract)> = Vec::default();
 

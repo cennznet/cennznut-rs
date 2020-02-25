@@ -37,11 +37,40 @@ impl<Domain: Display> Display for ValidationErr<Domain> {
     }
 }
 
-pub trait Validate<Domain: Display> {
+pub trait Validate<RuntimeDomain: Display, ContractDomain: Display> {
+    /// Legacy interface for validating a CENNZnut runtime module
+    ///
+    /// # Errors
+    ///
+    /// On failure, returns an error embedded in `RuntimeDomain`
     fn validate(
         &self,
         module: &str,
         method: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr<Domain>>;
+    ) -> Result<(), ValidationErr<RuntimeDomain>>;
+
+    /// Interface for validating a CENNZnut runtime module
+    ///
+    /// # Errors
+    ///
+    /// On failure, returns an error embedded in `RuntimeDomain`
+    fn validate_runtime_call(
+        &self,
+        module: &str,
+        method: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr<RuntimeDomain>>;
+
+    /// Interface for validating a CENNZnut smart contract
+    ///
+    /// # Errors
+    ///
+    /// On failure, returns an error embedded in `ContractDomain`
+    fn validate_contract_call(
+        &self,
+        contract: &[u8; 32],
+        method: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr<ContractDomain>>;
 }

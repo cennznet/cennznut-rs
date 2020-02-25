@@ -30,18 +30,32 @@ use CENNZnut::V0;
 
 /// A CENNZnet module permission domain
 #[derive(Debug, Eq, PartialEq)]
-pub enum ModuleDomain {
+pub enum RuntimeDomain {
     Method,
     MethodArguments,
     Module,
 }
 
-impl Display for ModuleDomain {
+/// A CENNZnet contract permission domain
+#[derive(Debug, Eq, PartialEq)]
+pub enum ContractDomain {
+    Contract,
+}
+
+impl Display for RuntimeDomain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Method => write!(f, "method"),
             Self::MethodArguments => write!(f, "method arguments"),
             Self::Module => write!(f, "module"),
+        }
+    }
+}
+
+impl Display for ContractDomain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Contract => write!(f, "contract"),
         }
     }
 }
@@ -87,15 +101,35 @@ impl Decode for CENNZnut {
     }
 }
 
-impl Validate<ModuleDomain> for CENNZnut {
+impl Validate<RuntimeDomain, ContractDomain> for CENNZnut {
     fn validate(
         &self,
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr<ModuleDomain>> {
+    ) -> Result<(), ValidationErr<RuntimeDomain>> {
+        self.validate_runtime_call(module_name, method_name, args)
+    }
+
+    fn validate_runtime_call(
+        &self,
+        module_name: &str,
+        method_name: &str,
+        args: &[PactType],
+    ) -> Result<(), ValidationErr<RuntimeDomain>> {
         match &self {
-            V0(inner) => inner.validate(module_name, method_name, args),
+            V0(inner) => inner.validate_module(module_name, method_name, args),
+        }
+    }
+
+    fn validate_contract_call(
+        &self,
+        contract_address: &[u8; 32],
+        _: &str,
+        _: &[PactType],
+    ) -> Result<(), ValidationErr<ContractDomain>> {
+        match &self {
+            V0(inner) => inner.validate_contract(*contract_address),
         }
     }
 }
