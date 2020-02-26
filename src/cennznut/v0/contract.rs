@@ -5,26 +5,21 @@
 //! Delegated smart contract permissioning of CENNZnut for use in CENNZnet
 //!
 
-#![warn(clippy::pedantic)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+
+pub type ContractAddress = [u8; 32];
+pub const CONTRACT_WILDCARD: ContractAddress = [0u8;32];
 
 /// A CENNZnet permission domain contract
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Contract {
-    pub address: [u8; 32],
+    pub address: ContractAddress,
     pub block_cooldown: Option<u32>,
 }
 
 impl Contract {
-    pub fn new(address: &[u8; 32]) -> Self {
+    pub fn new(address: &ContractAddress) -> Self {
         Self {
             address: *address,
             block_cooldown: None,
@@ -33,7 +28,7 @@ impl Contract {
 
     pub fn wildcard() -> Self {
         Self {
-            address: [0x00; 32],
+            address: CONTRACT_WILDCARD,
             block_cooldown: None,
         }
     }
@@ -67,7 +62,7 @@ impl Decode for Contract {
         let has_cooldown_byte: u8 = input.read_byte()?.swap_bits();
         let has_cooldown: bool = (has_cooldown_byte & 0x01) == 0x01;
 
-        let mut address: [u8; 32] = Default::default();
+        let mut address: ContractAddress = Default::default();
         input
             .read(&mut address)
             .map_err(|_| "expected 32 byte address")?;

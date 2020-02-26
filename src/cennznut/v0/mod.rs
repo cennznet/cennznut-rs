@@ -5,15 +5,6 @@
 //! Version 0 CENNZnut type.
 //!
 
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 #[cfg(test)]
 mod tests;
 
@@ -35,13 +26,16 @@ use crate::ValidationErr;
 use contract::Contract;
 use module::Module;
 
+use contract::CONTRACT_WILDCARD;
+use contract::ContractAddress;
+
 pub const WILDCARD: &str = "*";
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(String, Module)>,
-    pub contracts: Vec<([u8; 32], Contract)>,
+    pub contracts: Vec<(ContractAddress, Contract)>,
 }
 
 impl CENNZnutV0 {
@@ -62,13 +56,13 @@ impl CENNZnutV0 {
 
     /// Returns the contract, if it exists in the CENNZnut
     /// Wildcard contracts (addr: 0) have lower priority than defined contracts
-    pub fn get_contract(&self, contract: [u8; 32]) -> Option<&Contract> {
+    pub fn get_contract(&self, contract: ContractAddress) -> Option<&Contract> {
         let mut outcome: Option<&Contract> = None;
         for (address, c) in &self.contracts {
             if address == &contract {
                 outcome = Some(c);
                 break;
-            } else if address == &[0; 32] {
+            } else if address == &CONTRACT_WILDCARD {
                 outcome = Some(c);
             }
         }
@@ -109,7 +103,7 @@ impl PartialDecode for CENNZnutV0 {
         }
 
         let contract_count = input.read_byte()?.swap_bits();
-        let mut contracts = Vec::<([u8; 32], Contract)>::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
 
         for _ in 0..contract_count {
             let c: Contract = Decode::decode(input)?;
@@ -173,7 +167,7 @@ impl CENNZnutV0 {
     /// Will return error if validation fails with the type of error embedded in `ContractDomain`
     pub fn validate_contract(
         &self,
-        contract_address: [u8; 32],
+        contract_address: ContractAddress,
     ) -> Result<(), ValidationErr<ContractDomain>> {
         self.get_contract(contract_address)
             .ok_or_else(|| ValidationErr::NoPermission(ContractDomain::Contract))?;
@@ -185,6 +179,8 @@ impl CENNZnutV0 {
 mod test {
     use super::CENNZnutV0;
     use super::Contract;
+    use super::ContractAddress;
+    use super::CONTRACT_WILDCARD;
 
     #[test]
     fn it_gets_no_contract_from_empty_list() {
@@ -198,7 +194,7 @@ mod test {
 
     #[test]
     fn it_gets_no_contract_from_list() {
-        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_b = Contract::new(&[0x12_u8; 32]);
         contracts.push((contract_a.address, contract_a));
@@ -214,7 +210,7 @@ mod test {
 
     #[test]
     fn it_gets_a_contract() {
-        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_b = Contract::new(&[0x12_u8; 32]);
         contracts.push((contract_a.address, contract_a));
@@ -230,9 +226,9 @@ mod test {
 
     #[test]
     fn it_gets_a_wildcard() {
-        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
-        let contract_wildcard = Contract::new(&[0x0_u8; 32]);
+        let contract_wildcard = Contract::new(&CONTRACT_WILDCARD);
         let contract_b = Contract::new(&[0x12_u8; 32]);
 
         contracts.push((contract_a.address, contract_a));
@@ -252,9 +248,9 @@ mod test {
 
     #[test]
     fn it_gives_defined_contracts_prescedence_over_wildcards() {
-        let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
-        let contract_wildcard = Contract::new(&[0x0_u8; 32]);
+        let contract_wildcard = Contract::new(&CONTRACT_WILDCARD);
         let contract_b = Contract::new(&[0x12_u8; 32]);
 
         contracts.push((contract_a.address, contract_a));
