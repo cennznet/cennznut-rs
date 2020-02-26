@@ -5,7 +5,7 @@
 
 #![cfg(test)]
 
-use super::contract::Contract;
+use super::contract::{Contract, ContractAddress};
 use super::method::Method;
 use super::module::Module;
 use super::WILDCARD;
@@ -32,8 +32,8 @@ fn make_modules(module: &Module) -> Vec<(String, Module)> {
     modules
 }
 
-fn make_contracts(contract: &Contract) -> Vec<([u8; 32], Contract)> {
-    let mut contracts: Vec<([u8; 32], Contract)> = Vec::default();
+fn make_contracts(contract: &Contract) -> Vec<(ContractAddress, Contract)> {
+    let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
     contracts.push((contract.address, contract.clone()));
     contracts
 }
@@ -54,7 +54,7 @@ fn it_works_encode() {
 
     let expected_version = vec![0, 0];
     let expected_modules = vec![
-        0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
@@ -78,14 +78,14 @@ fn it_works_encode_one_module() {
     let module = Module::new("module_test").methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116,
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]
@@ -117,7 +117,7 @@ fn it_works_encode_one_contract() {
 fn it_works_decode() {
     let encoded_version = vec![0, 0];
     let encoded_modules = vec![
-        0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
@@ -144,15 +144,15 @@ fn it_works_encode_with_module_cooldown() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 0x80, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104,
+            0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104,
             111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0
         ]
@@ -190,7 +190,7 @@ fn it_works_encode_with_contract_cooldown() {
 #[test]
 fn it_works_decode_with_module_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 0x80, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104, 111, 100,
         95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         0x00,
@@ -215,17 +215,17 @@ fn it_works_encode_with_method_cooldown() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 0x80, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116,
-            104, 111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 222, 0, 0, 0, 0,
+            0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104,
+            111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 222, 0, 0, 0, 0,
         ]
     );
 }
@@ -233,7 +233,7 @@ fn it_works_encode_with_method_cooldown() {
 #[test]
 fn it_works_decode_with_method_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 0x80, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
         100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         222, 0, 0, 0, 0x00,
@@ -364,7 +364,7 @@ fn it_works_encode_with_constraints() {
     let module = Module::new("module_test").methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let encoded = cennznut.encode();
@@ -372,7 +372,7 @@ fn it_works_encode_with_constraints() {
     assert_eq!(
         encoded,
         vec![
-            0, 0, 0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116,
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0,
             192, 128, 16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224,
@@ -391,7 +391,7 @@ fn it_works_encode_with_constraints() {
 #[test]
 fn it_works_decode_with_constraints() {
     let encoded: Vec<u8> = vec![
-        0, 0, 0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101,
         115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128,
         16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115,
@@ -438,12 +438,12 @@ fn it_works_with_lots_of_things_codec() {
     modules.push((module.name.clone(), module));
     modules.push((module2.name.clone(), module2));
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let encoded = vec![
-        0, 0, 0x40, 160, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 64, 160, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
         100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         222, 0, 0, 0, 128, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0,
@@ -480,7 +480,7 @@ fn it_validates_modules() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
@@ -560,7 +560,7 @@ fn it_validate_modules_error_with_bad_bytecode() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [PactType::StringLike(StringLike(b"test"))];
@@ -593,7 +593,7 @@ fn it_validate_modules_error_with_false_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
@@ -617,7 +617,7 @@ fn it_validate_modules_with_empty_constraints() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [
@@ -635,7 +635,7 @@ fn it_validate_modules_with_empty_constraints() {
 fn it_works_get_pact() {
     // A CENNZnut with constraints set
     let encoded_with: Vec<u8> = vec![
-        0, 0, 0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101,
         115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128,
         16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115,
@@ -667,7 +667,7 @@ fn it_works_get_pact() {
 
     // A CENNZnut without constraints set
     let encoded_without: Vec<u8> = vec![
-        0, 0, 0x80, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 64, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101,
         115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
@@ -707,7 +707,7 @@ fn wildcard_method_validate_modules() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
@@ -726,7 +726,7 @@ fn wildcard_module() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
@@ -742,7 +742,7 @@ fn wildcard_module_validate_modules() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
@@ -761,7 +761,7 @@ fn wildcard_module_wildcard_method_validate_modules() {
     let module = Module::new(WILDCARD).block_cooldown(1).methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
@@ -782,7 +782,7 @@ fn unregistered_module_fails_validation() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
@@ -803,7 +803,7 @@ fn unregistered_method_fails_validation() {
         .methods(methods);
     let modules = make_modules(&module);
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
     let args = [];
@@ -848,7 +848,7 @@ fn registered_modules_have_priority_over_wildcard_modules() {
     modules.push((wild_module.name.clone(), wild_module));
     modules.push((registered_module.name.clone(), registered_module));
 
-    let contracts: Vec<([u8; 32], Contract)> = Vec::default();
+    let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
 
     let cennznut = CENNZnutV0 { modules, contracts };
 

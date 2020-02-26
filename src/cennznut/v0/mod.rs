@@ -26,8 +26,8 @@ use crate::ValidationErr;
 use contract::Contract;
 use module::Module;
 
-use contract::CONTRACT_WILDCARD;
 use contract::ContractAddress;
+use contract::CONTRACT_WILDCARD;
 
 pub const WILDCARD: &str = "*";
 

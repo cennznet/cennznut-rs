@@ -9,7 +9,7 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 
 pub type ContractAddress = [u8; 32];
-pub const CONTRACT_WILDCARD: ContractAddress = [0u8;32];
+pub const CONTRACT_WILDCARD: ContractAddress = [0u8; 32];
 
 /// A CENNZnet permission domain contract
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
