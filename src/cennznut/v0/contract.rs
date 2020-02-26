@@ -5,11 +5,10 @@
 //! Delegated smart contract permissioning of CENNZnut for use in CENNZnet
 //!
 
+use crate::cennznut::ContractAddress;
+use crate::cennznut::CONTRACT_WILDCARD;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-
-pub type ContractAddress = [u8; 32];
-pub const CONTRACT_WILDCARD: ContractAddress = [0u8; 32];
 
 /// A CENNZnet permission domain contract
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -46,7 +45,7 @@ impl Encode for Contract {
             has_cooldown_byte |= 0b0000_0001_u8;
         }
         buf.push_byte(has_cooldown_byte.swap_bits());
-        let address = self.address;
+        let address: ContractAddress = self.address;
         buf.write(&address);
 
         if let Some(cooldown) = self.block_cooldown {

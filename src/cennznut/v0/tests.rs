@@ -8,7 +8,7 @@
 use super::contract::{Contract, ContractAddress};
 use super::method::Method;
 use super::module::Module;
-use super::WILDCARD;
+use crate::cennznut::WILDCARD;
 use crate::cennznut::{ContractDomain, RuntimeDomain};
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 

@@ -26,10 +26,10 @@ use crate::ValidationErr;
 use contract::Contract;
 use module::Module;
 
-use contract::ContractAddress;
-use contract::CONTRACT_WILDCARD;
+use super::WILDCARD;
 
-pub const WILDCARD: &str = "*";
+use super::ContractAddress;
+use super::CONTRACT_WILDCARD;
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]

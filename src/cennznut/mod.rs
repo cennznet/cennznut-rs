@@ -19,6 +19,10 @@ use core::convert::TryFrom;
 use v0::CENNZnutV0;
 use CENNZnut::V0;
 
+pub type ContractAddress = [u8; 32];
+pub const CONTRACT_WILDCARD: ContractAddress = [0u8; 32];
+pub const WILDCARD: &str = "*";
+
 /// A CENNZnet module permission domain
 #[derive(Debug, Eq, PartialEq)]
 pub enum RuntimeDomain {
@@ -106,7 +110,7 @@ impl CENNZnut {
 
     fn validate_contract_call(
         &self,
-        contract_address: &[u8; 32],
+        contract_address: &ContractAddress,
     ) -> Result<(), ValidationErr<ContractDomain>> {
         match &self {
             V0(inner) => inner.validate_contract(*contract_address),
