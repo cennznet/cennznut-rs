@@ -5,11 +5,10 @@
 
 #![cfg(test)]
 
-use super::contract::{Contract, ContractAddress};
+use super::contract::Contract;
 use super::method::Method;
 use super::module::Module;
-use crate::cennznut::WILDCARD;
-use crate::cennznut::{ContractDomain, RuntimeDomain};
+use crate::cennznut::{ContractAddress, ContractDomain, RuntimeDomain, WILDCARD};
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 
 use bit_reverse::ParallelReverse;
@@ -58,11 +57,7 @@ fn it_works_encode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
         116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let expected_contracts = vec![
-        0x80, 0x00, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
-        0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a, 0x5a,
-        0x5a, 0x5a, 0x5a, 0x5a,
-    ];
+    let expected_contracts = [vec![0x80, 0x00], vec![0x5a_u8; 32]].concat();
     assert_eq!(
         encoded,
         [expected_version, expected_modules, expected_contracts].concat()
@@ -236,7 +231,7 @@ fn it_works_decode_with_method_cooldown() {
         0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
         100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        222, 0, 0, 0, 0x00,
+        222, 0, 0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     let c0 = CENNZnutV0::try_from(c).unwrap();

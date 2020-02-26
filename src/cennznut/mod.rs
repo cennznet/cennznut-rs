@@ -20,7 +20,7 @@ use v0::CENNZnutV0;
 use CENNZnut::V0;
 
 pub type ContractAddress = [u8; 32];
-pub const CONTRACT_WILDCARD: ContractAddress = [0u8; 32];
+pub const CONTRACT_WILDCARD: ContractAddress = [0_u8; 32];
 pub const WILDCARD: &str = "*";
 
 /// A CENNZnet module permission domain

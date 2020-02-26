@@ -6,7 +6,6 @@
 //!
 
 use alloc::fmt::{self, Display, Formatter};
-use pact::interpreter::types::PactType;
 
 /// Error which may occur while validating the permission domain
 #[derive(Debug, Eq, PartialEq)]
