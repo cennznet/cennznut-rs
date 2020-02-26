@@ -22,7 +22,7 @@ mod validation;
 
 pub use crate::cennznut::v0::CENNZnutV0;
 pub use crate::cennznut::CENNZnut;
-pub use crate::validation::{Validate, ValidationErr};
+pub use crate::validation::ValidationErr;
 
 mod test;
 

@@ -11,7 +11,6 @@ use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::types::PactType;
 
 use crate::PartialDecode;
-use crate::Validate;
 use crate::ValidationErr;
 
 pub mod v0;
@@ -93,16 +92,7 @@ impl Decode for CENNZnut {
     }
 }
 
-impl Validate<RuntimeDomain, ContractDomain> for CENNZnut {
-    fn validate(
-        &self,
-        module_name: &str,
-        method_name: &str,
-        args: &[PactType],
-    ) -> Result<(), ValidationErr<RuntimeDomain>> {
-        self.validate_runtime_call(module_name, method_name, args)
-    }
-
+impl CENNZnut {
     fn validate_runtime_call(
         &self,
         module_name: &str,
@@ -117,8 +107,6 @@ impl Validate<RuntimeDomain, ContractDomain> for CENNZnut {
     fn validate_contract_call(
         &self,
         contract_address: &[u8; 32],
-        _: &str,
-        _: &[PactType],
     ) -> Result<(), ValidationErr<ContractDomain>> {
         match &self {
             V0(inner) => inner.validate_contract(*contract_address),
