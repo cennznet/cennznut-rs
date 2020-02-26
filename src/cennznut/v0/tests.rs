@@ -3,7 +3,6 @@
 //! CENNZnut - Integration Tests
 //!
 
-#![warn(clippy::pedantic)]
 #![cfg(test)]
 
 use super::contract::Contract;

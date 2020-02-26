@@ -5,14 +5,6 @@
 //! Delegated method permissioning of CENNZnut for use in CENNZnet
 //!
 
-#![warn(clippy::pedantic)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;

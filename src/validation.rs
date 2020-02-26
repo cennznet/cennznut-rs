@@ -5,15 +5,6 @@
 //! Validation trait of CENNZnut for use in CENNZnet
 //!
 
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 use alloc::fmt::{self, Display, Formatter};
 use pact::interpreter::types::PactType;
 

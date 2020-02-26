@@ -4,14 +4,6 @@
 //! Collection of versioned `CENNZnuts`
 //!
 
-#![warn(clippy::pedantic)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 use alloc::fmt::{self, Display, Formatter};
 
 use bit_reverse::ParallelReverse;
