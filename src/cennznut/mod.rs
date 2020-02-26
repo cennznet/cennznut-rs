@@ -97,6 +97,13 @@ impl Decode for CENNZnut {
 }
 
 impl CENNZnut {
+    /// Validates a CENNZnut runtime module call by:
+    /// (1) identifying the version to be validated
+    /// (2) executing the specific cennznut version's validation function
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `RuntimeDomain`
     pub fn validate_runtime_call(
         &self,
         module_name: &str,
@@ -108,6 +115,13 @@ impl CENNZnut {
         }
     }
 
+    /// Validates a CENNZnut smart contract call by:
+    /// (1) identifying the version to be validated
+    /// (2) executing the specific cennznut version's validation function
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `ContractDomain`
     pub fn validate_contract_call(
         &self,
         contract_address: &ContractAddress,
@@ -124,19 +138,19 @@ mod test {
     use super::{CENNZnut, CENNZnutV0, ContractAddress};
 
     fn make_methods(method: &Method) -> Vec<(String, Method)> {
-        let mut methods: Vec<(String, Method)> = Vec::default();
+        let mut methods = Vec::<(String, Method)>::default();
         methods.push((method.name.clone(), method.clone()));
         methods
     }
 
     fn make_modules(module: &Module) -> Vec<(String, Module)> {
-        let mut modules: Vec<(String, Module)> = Vec::default();
+        let mut modules = Vec::<(String, Module)>::default();
         modules.push((module.name.clone(), module.clone()));
         modules
     }
 
     fn make_contracts(contract: &Contract) -> Vec<(ContractAddress, Contract)> {
-        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
         contracts.push((contract.address, contract.clone()));
         contracts
     }
@@ -148,7 +162,7 @@ mod test {
         let module = Module::new("module_test").methods(methods);
         let modules = make_modules(&module);
 
-        let contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let contracts = Vec::<(ContractAddress, Contract)>::default();
 
         let cennznut = CENNZnut::V0(CENNZnutV0 { modules, contracts });
 
@@ -160,7 +174,7 @@ mod test {
 
     #[test]
     fn it_validates_v0_contracts() {
-        let modules: Vec<(String, Module)> = Vec::default();
+        let modules = Vec::<(String, Module)>::default();
 
         let contract = Contract::new(&[0x12_u8; 32]);
         let contracts = make_contracts(&contract);

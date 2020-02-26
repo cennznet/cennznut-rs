@@ -5,8 +5,7 @@
 //! Delegated smart contract permissioning of CENNZnut for use in CENNZnet
 //!
 
-use crate::cennznut::ContractAddress;
-use crate::cennznut::CONTRACT_WILDCARD;
+use crate::cennznut::{ContractAddress, CONTRACT_WILDCARD};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 
@@ -40,10 +39,11 @@ impl Contract {
 
 impl Encode for Contract {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        let mut has_cooldown_byte = 0x00_u8;
-        if self.block_cooldown.is_some() {
-            has_cooldown_byte |= 0b0000_0001_u8;
-        }
+        let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
+            0b0000_0001
+        } else {
+            0x00_u8
+        };
         buf.push_byte(has_cooldown_byte.swap_bits());
         let address: ContractAddress = self.address;
         buf.write(&address);
@@ -61,7 +61,7 @@ impl Decode for Contract {
         let has_cooldown_byte: u8 = input.read_byte()?.swap_bits();
         let has_cooldown: bool = (has_cooldown_byte & 0x01) == 0x01;
 
-        let mut address: ContractAddress = Default::default();
+        let mut address = ContractAddress::default();
         input
             .read(&mut address)
             .map_err(|_| "expected 32 byte address")?;
@@ -86,7 +86,7 @@ impl Decode for Contract {
 
 #[cfg(test)]
 mod test {
-    use super::Contract;
+    use super::{Contract, CONTRACT_WILDCARD};
     use codec::{Decode, Encode};
     use std::assert_eq;
 
@@ -124,14 +124,11 @@ mod test {
     #[test]
     fn it_initializes_wildcard() {
         let expected_length: usize = 32;
-        let expected_value: u8 = 0x00;
 
         let contract = Contract::wildcard();
 
         assert_eq!(contract.address.len(), expected_length);
-        for i in 0..32 {
-            assert_eq!(contract.address[i], expected_value);
-        }
+        assert_eq!(contract.address, CONTRACT_WILDCARD);
     }
 
     #[test]

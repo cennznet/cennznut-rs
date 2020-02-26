@@ -20,16 +20,12 @@ pub mod method;
 pub mod module;
 
 use super::{ContractDomain, RuntimeDomain};
-use crate::PartialDecode;
-use crate::ValidationErr;
+use crate::{PartialDecode, ValidationErr};
 
 use contract::Contract;
 use module::Module;
 
-use super::WILDCARD;
-
-use super::ContractAddress;
-use super::CONTRACT_WILDCARD;
+use super::{ContractAddress, CONTRACT_WILDCARD, WILDCARD};
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -180,13 +176,14 @@ mod test {
     use super::CENNZnutV0;
     use super::Contract;
     use super::ContractAddress;
+    use super::Module;
     use super::CONTRACT_WILDCARD;
 
     #[test]
     fn it_gets_no_contract_from_empty_list() {
         let cennznut = CENNZnutV0 {
-            modules: Vec::default(),
-            contracts: Vec::default(),
+            modules: Vec::<(String, Module)>::default(),
+            contracts: Vec::<(ContractAddress, Contract)>::default(),
         };
 
         assert_eq!(cennznut.get_contract([0x55; 32]), None);
@@ -194,14 +191,14 @@ mod test {
 
     #[test]
     fn it_gets_no_contract_from_list() {
-        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_b = Contract::new(&[0x12_u8; 32]);
         contracts.push((contract_a.address, contract_a));
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::default(),
+            modules: Vec::<(String, Module)>::default(),
             contracts,
         };
 
@@ -210,14 +207,14 @@ mod test {
 
     #[test]
     fn it_gets_a_contract() {
-        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_b = Contract::new(&[0x12_u8; 32]);
         contracts.push((contract_a.address, contract_a));
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::default(),
+            modules: Vec::<(String, Module)>::default(),
             contracts,
         };
 
@@ -226,7 +223,7 @@ mod test {
 
     #[test]
     fn it_gets_a_wildcard() {
-        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_wildcard = Contract::new(&CONTRACT_WILDCARD);
         let contract_b = Contract::new(&[0x12_u8; 32]);
@@ -236,7 +233,7 @@ mod test {
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::default(),
+            modules: Vec::<(String, Module)>::default(),
             contracts,
         };
 
@@ -248,7 +245,7 @@ mod test {
 
     #[test]
     fn it_gives_defined_contracts_prescedence_over_wildcards() {
-        let mut contracts: Vec<(ContractAddress, Contract)> = Vec::default();
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
         let contract_a = Contract::new(&[0x45_u8; 32]);
         let contract_wildcard = Contract::new(&CONTRACT_WILDCARD);
         let contract_b = Contract::new(&[0x12_u8; 32]);
@@ -258,7 +255,7 @@ mod test {
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::default(),
+            modules: Vec::<(String, Module)>::default(),
             contracts,
         };
 
