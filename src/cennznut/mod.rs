@@ -4,14 +4,6 @@
 //! Collection of versioned `CENNZnuts`
 //!
 
-#![warn(clippy::pedantic)]
-
-#[cfg(not(feature = "std"))]
-extern crate alloc;
-
-#[cfg(feature = "std")]
-extern crate std as alloc;
-
 use alloc::fmt::{self, Display, Formatter};
 
 use bit_reverse::ParallelReverse;
@@ -19,7 +11,6 @@ use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::types::PactType;
 
 use crate::PartialDecode;
-use crate::Validate;
 use crate::ValidationErr;
 
 pub mod v0;
@@ -28,20 +19,38 @@ use core::convert::TryFrom;
 use v0::CENNZnutV0;
 use CENNZnut::V0;
 
+pub type ContractAddress = [u8; 32];
+pub const CONTRACT_WILDCARD: ContractAddress = [0_u8; 32];
+pub const WILDCARD: &str = "*";
+
 /// A CENNZnet module permission domain
 #[derive(Debug, Eq, PartialEq)]
-pub enum ModuleDomain {
+pub enum RuntimeDomain {
     Method,
     MethodArguments,
     Module,
 }
 
-impl Display for ModuleDomain {
+/// A CENNZnet contract permission domain
+#[derive(Debug, Eq, PartialEq)]
+pub enum ContractDomain {
+    Contract,
+}
+
+impl Display for RuntimeDomain {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Method => write!(f, "method"),
             Self::MethodArguments => write!(f, "method arguments"),
             Self::Module => write!(f, "module"),
+        }
+    }
+}
+
+impl Display for ContractDomain {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Contract => write!(f, "contract"),
         }
     }
 }
@@ -87,15 +96,91 @@ impl Decode for CENNZnut {
     }
 }
 
-impl Validate<ModuleDomain> for CENNZnut {
-    fn validate(
+impl CENNZnut {
+    /// Validates a CENNZnut runtime module call by:
+    /// (1) identifying the version to be validated
+    /// (2) executing the specific cennznut version's validation function
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `RuntimeDomain`
+    pub fn validate_runtime_call(
         &self,
         module_name: &str,
         method_name: &str,
         args: &[PactType],
-    ) -> Result<(), ValidationErr<ModuleDomain>> {
+    ) -> Result<(), ValidationErr<RuntimeDomain>> {
         match &self {
-            V0(inner) => inner.validate(module_name, method_name, args),
+            V0(inner) => inner.validate_module(module_name, method_name, args),
         }
+    }
+
+    /// Validates a CENNZnut smart contract call by:
+    /// (1) identifying the version to be validated
+    /// (2) executing the specific cennznut version's validation function
+    ///
+    /// # Errors
+    ///
+    /// Will return error if validation fails with the type of error embedded in `ContractDomain`
+    pub fn validate_contract_call(
+        &self,
+        contract_address: &ContractAddress,
+    ) -> Result<(), ValidationErr<ContractDomain>> {
+        match &self {
+            V0(inner) => inner.validate_contract(*contract_address),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::v0::{contract::Contract, method::Method, module::Module};
+    use super::{CENNZnut, CENNZnutV0, ContractAddress};
+
+    fn make_methods(method: &Method) -> Vec<(String, Method)> {
+        let mut methods = Vec::<(String, Method)>::default();
+        methods.push((method.name.clone(), method.clone()));
+        methods
+    }
+
+    fn make_modules(module: &Module) -> Vec<(String, Module)> {
+        let mut modules = Vec::<(String, Module)>::default();
+        modules.push((module.name.clone(), module.clone()));
+        modules
+    }
+
+    fn make_contracts(contract: &Contract) -> Vec<(ContractAddress, Contract)> {
+        let mut contracts = Vec::<(ContractAddress, Contract)>::default();
+        contracts.push((contract.address, contract.clone()));
+        contracts
+    }
+
+    #[test]
+    fn it_validates_v0_module() {
+        let method = Method::new("*");
+        let methods = make_methods(&method);
+        let module = Module::new("module_test").methods(methods);
+        let modules = make_modules(&module);
+
+        let contracts = Vec::<(ContractAddress, Contract)>::default();
+
+        let cennznut = CENNZnut::V0(CENNZnutV0 { modules, contracts });
+
+        assert_eq!(
+            cennznut.validate_runtime_call(&module.name, &method.name, &[]),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn it_validates_v0_contracts() {
+        let modules = Vec::<(String, Module)>::default();
+
+        let contract = Contract::new(&[0x12_u8; 32]);
+        let contracts = make_contracts(&contract);
+
+        let cennznut = CENNZnut::V0(CENNZnutV0 { modules, contracts });
+
+        assert_eq!(cennznut.validate_contract_call(&contract.address), Ok(()));
     }
 }

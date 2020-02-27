@@ -7,6 +7,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::module_name_repetitions)]
 
 #[cfg(not(feature = "std"))]
 extern crate alloc;
@@ -22,11 +23,15 @@ mod validation;
 
 pub use crate::cennznut::v0::CENNZnutV0;
 pub use crate::cennznut::CENNZnut;
-pub use crate::validation::{Validate, ValidationErr};
+pub use crate::validation::ValidationErr;
 
 mod test;
 
 pub trait PartialDecode: Sized {
     /// decode an input which is not including the version as the up front two bytes
+    ///
+    /// # Errors
+    ///
+    /// On failure, returns a `codec::Error`
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error>;
 }
