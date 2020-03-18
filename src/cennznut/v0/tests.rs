@@ -166,7 +166,8 @@ fn it_works_encode_with_contract_cooldown() {
     let expected_version = vec![0, 0];
     let expected_modules = vec![0x00];
     let expected_contract_header = vec![0x80, 0x80];
-    let expected_contract_address = vec![0x8b_u8; 32];
+    // 0xd1 = LE 0x8b
+    let expected_contract_address = vec![0xd1_u8; 32];
     // Little endian representation of 0x22221111 is 0x88884444
     let expected_contract_cooldown = vec![0x88, 0x88, 0x44, 0x44];
     let expected_contracts = [
@@ -264,11 +265,16 @@ fn it_works_encode_two_contracts() {
 
     let expected_version = vec![0, 0];
     let expected_modules = vec![0x00];
-    let expected_contract_header = vec![0x40]; // 0x40 == little endian 2
-    let expected_contract_a_header = vec![0x00]; // no cooldown
-    let expected_contract_a_address = vec![0x4a_u8; 32];
-    let expected_contract_b_header = vec![0x80]; // cooldown
-    let expected_contract_b_address = vec![0x8b_u8; 32];
+    // 0x40 == little endian 2
+    let expected_contract_header = vec![0x40];
+    // no cooldown
+    let expected_contract_a_header = vec![0x00];
+    // 0x52 = LE 0x4a
+    let expected_contract_a_address = vec![0x52_u8; 32];
+    // cooldown
+    let expected_contract_b_header = vec![0x80];
+    // 0xd1 = LE 0x8b
+    let expected_contract_b_address = vec![0xd1_u8; 32];
     // Little endian representation of 0xaa5555aa is 0x55aaaa55
     let expected_contract_b_cooldown = vec![0x55, 0xaa, 0xaa, 0x55];
     let expected_contracts = [
