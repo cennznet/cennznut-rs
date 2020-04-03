@@ -21,6 +21,9 @@ pub use core::convert::TryFrom;
 mod cennznut;
 mod validation;
 
+pub use crate::cennznut::RuntimeDomain;
+pub use crate::cennznut::ContractDomain;
+
 pub use crate::cennznut::v0::CENNZnutV0;
 pub use crate::cennznut::CENNZnut;
 pub use crate::validation::ValidationErr;
