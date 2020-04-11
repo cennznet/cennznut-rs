@@ -9,7 +9,7 @@ use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use pact::contract::Contract;
+use pact::contract::Contract as PactContract;
 
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -39,10 +39,10 @@ impl Method {
     }
 
     /// Returns the Pact contract, if it exists in the Method
-    pub fn get_pact(&self) -> Option<Contract> {
+    pub fn get_pact(&self) -> Option<PactContract> {
         match &self.constraints {
-            Some(constraints) => match Contract::decode(constraints) {
-                Ok(contract) => Some(contract),
+            Some(constraints) => match PactContract::decode(constraints) {
+                Ok(pact_contract) => Some(pact_contract),
                 // This error case can only occur after initializing a Method with bad constraints.
                 // A decoded Method will be checked during decoding.
                 Err(_) => None,
@@ -118,7 +118,7 @@ impl Decode for Method {
                 for _ in 0..constraints_length {
                     constraints_buf.push(input.read_byte()?);
                 }
-                if Contract::decode(&constraints_buf).is_err() {
+                if PactContract::decode(&constraints_buf).is_err() {
                     return Err(codec::Error::from("invalid constraints codec"));
                 };
                 Some(constraints_buf)

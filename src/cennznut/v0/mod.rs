@@ -143,8 +143,8 @@ impl CENNZnutV0 {
         let method = module
             .get_method(method_name)
             .ok_or_else(|| ValidationErr::NoPermission(RuntimeDomain::Method))?;
-        if let Some(contract) = method.get_pact() {
-            match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
+        if let Some(pact) = method.get_pact() {
+            match interpret(args, pact.data_table.as_ref(), &pact.bytecode) {
                 Ok(true) => {}
                 Ok(false) => {
                     return Err(ValidationErr::NoPermission(RuntimeDomain::MethodArguments))

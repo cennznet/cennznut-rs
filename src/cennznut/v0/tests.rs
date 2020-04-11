@@ -348,7 +348,7 @@ fn it_works_decode_with_version_0() {
 
 #[test]
 fn it_works_encode_with_constraints() {
-    let contract = PactContract {
+    let pact = PactContract {
         data_table: DataTable::new(vec![
             PactType::Numeric(Numeric(111)),
             PactType::Numeric(Numeric(333)),
@@ -357,7 +357,7 @@ fn it_works_encode_with_constraints() {
         bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
     };
     let mut constraints: Vec<u8> = Vec::new();
-    contract.encode(&mut constraints);
+    pact.encode(&mut constraints);
 
     let method = Method::new("method_test").constraints(constraints.clone());
     let methods = make_methods(&method);
@@ -461,7 +461,7 @@ fn it_works_with_lots_of_things_codec() {
 
 #[test]
 fn it_validates_modules() {
-    let contract = PactContract {
+    let pact = PactContract {
         data_table: DataTable::new(vec![
             PactType::Numeric(Numeric(123)),
             PactType::StringLike(StringLike(b"test")),
@@ -469,7 +469,7 @@ fn it_validates_modules() {
         bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
     };
     let mut constraints: Vec<u8> = Vec::new();
-    contract.encode(&mut constraints);
+    pact.encode(&mut constraints);
 
     let method = Method::new("method_test")
         .block_cooldown(123)
@@ -544,12 +544,12 @@ fn it_validates_wildcard_contract() {
 
 #[test]
 fn it_validate_modules_error_with_bad_bytecode() {
-    let contract = PactContract {
+    let pact = PactContract {
         data_table: DataTable::new(vec![PactType::StringLike(StringLike(b"test"))]),
         bytecode: [OpCode::GT.into(), 0, 0, 1, 0].to_vec(),
     };
     let mut constraints: Vec<u8> = Vec::new();
-    contract.encode(&mut constraints);
+    pact.encode(&mut constraints);
 
     let method = Method::new("method_test")
         .block_cooldown(123)
@@ -574,7 +574,7 @@ fn it_validate_modules_error_with_bad_bytecode() {
 
 #[test]
 fn it_validate_modules_error_with_false_constraints() {
-    let contract = PactContract {
+    let pact = PactContract {
         data_table: DataTable::new(vec![
             PactType::Numeric(Numeric(123)),
             PactType::StringLike(StringLike(b"a")),
@@ -582,7 +582,7 @@ fn it_validate_modules_error_with_false_constraints() {
         bytecode: [OpCode::EQ.into(), 0, 0, 1, 0, OpCode::EQ.into(), 0, 1, 1, 1].to_vec(),
     };
     let mut constraints: Vec<u8> = Vec::new();
-    contract.encode(&mut constraints);
+    pact.encode(&mut constraints);
 
     let method = Method::new("method_test")
         .block_cooldown(123)
@@ -645,16 +645,16 @@ fn it_works_get_pact() {
 
     let cennznut_with: CENNZnut = Decode::decode(&mut &encoded_with[..]).expect("it works");
     let cennznut_with_v0 = CENNZnutV0::try_from(cennznut_with).unwrap();
-    let contract_with = cennznut_with_v0
+    let pact_with = cennznut_with_v0
         .get_module("module_test")
         .expect("module exists")
         .get_method("method_test")
         .expect("method exists")
         .get_pact();
 
-    if let Some(contract) = contract_with {
+    if let Some(pact) = pact_with {
         assert_eq!(
-            contract,
+            pact,
             PactContract {
                 data_table: DataTable::new(vec![
                     PactType::Numeric(Numeric(111)),
