@@ -9,7 +9,7 @@ use crate::cennznut::{ContractAddress, CONTRACT_WILDCARD};
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 
-const HAS_COOLDOWN_MASK: u8 = 0x01;
+const BLOCK_COOLDOWN_MASK: u8 = 0x01;
 
 /// A CENNZnet permission domain contract
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -42,7 +42,7 @@ impl Contract {
 impl Encode for Contract {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
-            HAS_COOLDOWN_MASK
+            BLOCK_COOLDOWN_MASK
         } else {
             0x00_u8
         };
@@ -64,7 +64,7 @@ impl Encode for Contract {
 impl Decode for Contract {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let has_cooldown_byte: u8 = input.read_byte()?.swap_bits();
-        let has_cooldown: bool = (has_cooldown_byte & HAS_COOLDOWN_MASK) == HAS_COOLDOWN_MASK;
+        let has_cooldown: bool = (has_cooldown_byte & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK;
 
         let mut address = ContractAddress::default();
         input

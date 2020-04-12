@@ -9,6 +9,7 @@ use super::contract::Contract;
 use super::method::Method;
 use super::module::Module;
 use crate::cennznut::{
+    v0::{MAX_CONTRACTS, MAX_METHODS, MAX_MODULES},
     ContractAddress, ContractDomain, MethodName, ModuleName, RuntimeDomain, WILDCARD,
 };
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
@@ -869,4 +870,68 @@ fn registered_modules_have_priority_over_wildcard_modules() {
     let result = cennznut.get_module("registered_module").unwrap();
 
     assert_eq!(result.name, "registered_module");
+}
+
+#[test]
+fn it_fails_to_encode_with_zero_modules() {
+    let modules: Vec<(ModuleName, Module)> = Vec::default();
+    let contracts = Vec::<(ContractAddress, Contract)>::default();
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
+}
+
+#[test]
+fn it_fails_to_encode_with_zero_methods() {
+    let methods: Vec<(MethodName, Method)> = Vec::default();
+    let module = Module::new("TestModule").methods(methods);
+    let modules = make_modules(&module);
+    let contracts = Vec::<(ContractAddress, Contract)>::default();
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
+}
+
+#[test]
+fn it_fails_to_encode_with_too_many_modules() {
+    let method = Method::new("registered_method");
+    let methods = make_methods(&method);
+    let mut modules: Vec<(ModuleName, Module)> = Vec::default();
+    for x in 0..MAX_MODULES + 1 {
+        let module = Module::new(&x.to_string()).methods(methods.clone());
+        modules.push((module.name.clone(), module));
+    }
+    let contracts = Vec::<(ContractAddress, Contract)>::default();
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
+}
+
+#[test]
+fn it_fails_to_encode_with_too_many_methods() {
+    let mut methods: Vec<(MethodName, Method)> = Vec::default();
+    for x in 0..MAX_METHODS + 1 {
+        let method = Method::new(&x.to_string());
+        methods.push((method.name.clone(), method));
+    }
+    let module = Module::new("registered_module").methods(methods);
+    let modules = make_modules(&module);
+    let contracts = Vec::<(ContractAddress, Contract)>::default();
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
+}
+
+#[test]
+fn it_fails_to_encode_with_too_many_contracts() {
+    let method = Method::new("registered_method");
+    let methods = make_methods(&method);
+    let module = Module::new("registered_module").methods(methods);
+    let modules = make_modules(&module);
+    let mut contracts = Vec::<(ContractAddress, Contract)>::default();
+    for x in 0..MAX_CONTRACTS + 1 {
+        let mut address = [0; 32];
+        address[0] = x as u8 & 0xff;
+        address[1] = (x >> 8) as u8 & 0xff;
+        let contract = Contract::new(&address);
+        contracts.push((contract.address, contract.clone()));
+    }
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
 }

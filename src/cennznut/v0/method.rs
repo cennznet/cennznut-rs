@@ -12,6 +12,9 @@ use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::contract::Contract as PactContract;
 
+const BLOCK_COOLDOWN_MASK: u8 = 0x01;
+const CONSTRAINTS_MASK: u8 = 0x02;
+
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
@@ -56,12 +59,12 @@ impl Method {
 impl Encode for Method {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
-            0b1000_0000
+            BLOCK_COOLDOWN_MASK.swap_bits()
         } else {
             0
         };
         let has_constraints_byte: u8 = if self.constraints.is_some() {
-            0b0100_0000
+            CONSTRAINTS_MASK.swap_bits()
         } else {
             0
         };
@@ -101,7 +104,7 @@ impl Decode for Method {
             .to_string();
 
         let block_cooldown: Option<u32> =
-            if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            if (block_cooldown_and_constraints & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
                     input.read_byte()?.swap_bits(),
                     input.read_byte()?.swap_bits(),
@@ -113,7 +116,7 @@ impl Decode for Method {
             };
 
         let constraints: Option<Vec<u8>> =
-            if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+            if (block_cooldown_and_constraints & CONSTRAINTS_MASK) == CONSTRAINTS_MASK {
                 let constraints_length = (input.read_byte()?.swap_bits()).saturating_add(1);
                 let mut constraints_buf = Vec::<u8>::default();
                 for _ in 0..constraints_length {
