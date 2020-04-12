@@ -11,7 +11,7 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use std::convert::TryFrom;
+use core::convert::TryFrom;
 
 use super::method::Method;
 use super::MAX_METHODS;
@@ -64,7 +64,7 @@ impl Module {
 
 impl Encode for Module {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        if self.methods.len() == 0 || self.methods.len() > MAX_METHODS {
+        if self.methods.is_empty() || self.methods.len() > MAX_METHODS {
             return;
         }
         let method_count = u8::try_from(self.methods.len() - 1);

@@ -12,8 +12,8 @@ use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use core::convert::TryFrom;
 use pact::interpreter::{interpret, types::PactType};
-use std::convert::TryFrom;
 
 pub mod contract;
 pub mod method;
@@ -73,7 +73,7 @@ impl CENNZnutV0 {
 
 impl Encode for CENNZnutV0 {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        if self.modules.len() == 0 || self.modules.len() > MAX_MODULES {
+        if self.modules.is_empty() || self.modules.len() > MAX_MODULES {
             return;
         }
         let module_count = u8::try_from(self.modules.len() - 1);
@@ -84,20 +84,20 @@ impl Encode for CENNZnutV0 {
 
         // Encode all modules, but make sure each encoding is valid
         // before modifying the output buffer.
-        let mut modules_buf: Vec<u8> = Default::default();
+        let mut module_payload_buf: Vec<u8> = Vec::<u8>::default();
         for (_, module) in &self.modules {
-            let mut module_buf: Vec<u8> = Default::default();
+            let mut module_buf: Vec<u8> = Vec::<u8>::default();
             module.encode_to(&mut module_buf);
-            if module_buf.len() == 0 {
+            if module_buf.is_empty() {
                 return;
             }
-            modules_buf.write(module_buf.as_slice());
+            module_payload_buf.write(module_buf.as_slice());
         }
 
         buf.write(&VERSION_BYTES);
 
         buf.push_byte(module_count.unwrap().swap_bits());
-        buf.write(modules_buf.as_slice());
+        buf.write(module_payload_buf.as_slice());
 
         buf.push_byte(contract_count.unwrap().swap_bits());
         for (_, contract) in &self.contracts {
