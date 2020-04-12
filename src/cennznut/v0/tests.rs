@@ -8,7 +8,7 @@
 use super::contract::Contract;
 use super::method::Method;
 use super::module::Module;
-use crate::cennznut::{ContractAddress, ContractDomain, RuntimeDomain, WILDCARD};
+use crate::cennznut::{ContractAddress, ModuleName, MethodName, ContractDomain, RuntimeDomain, WILDCARD};
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 
 use bit_reverse::ParallelReverse;
@@ -16,17 +16,16 @@ use codec::{Decode, Encode};
 use pact::contract::{Contract as PactContract, DataTable};
 use pact::interpreter::OpCode;
 use pact::types::{Numeric, PactType, StringLike};
-use std::string::String;
 use std::vec::Vec;
 
-fn make_methods(method: &Method) -> Vec<(String, Method)> {
-    let mut methods = Vec::<(String, Method)>::default();
+fn make_methods(method: &Method) -> Vec<(MethodName, Method)> {
+    let mut methods = Vec::<(MethodName, Method)>::default();
     methods.push((method.name.clone(), method.clone()));
     methods
 }
 
-fn make_modules(module: &Module) -> Vec<(String, Module)> {
-    let mut modules = Vec::<(String, Module)>::default();
+fn make_modules(module: &Module) -> Vec<(ModuleName, Module)> {
+    let mut modules = Vec::<(ModuleName, Module)>::default();
     modules.push((module.name.clone(), module.clone()));
     modules
 }
@@ -89,7 +88,7 @@ fn it_works_encode_one_module() {
 
 #[test]
 fn it_works_encode_one_contract() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract = Contract::new(&[0x5a_u8; 32]);
     let contracts = make_contracts(&contract);
@@ -156,7 +155,7 @@ fn it_works_encode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_contract_cooldown() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x2222_1111);
     let contracts = make_contracts(&contract);
@@ -254,7 +253,7 @@ fn it_works_decode_with_method_cooldown() {
 
 #[test]
 fn it_works_encode_two_contracts() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract_a = Contract::new(&[0x4a_u8; 32]);
     let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_55aa);
@@ -424,7 +423,7 @@ fn it_works_with_lots_of_things_codec() {
     let method = Method::new("method_test").block_cooldown(123);
     let method2 = Method::new("method_test2").block_cooldown(321);
 
-    let mut methods: Vec<(String, Method)> = Vec::default();
+    let mut methods: Vec<(MethodName, Method)> = Vec::default();
     methods.push((method.name.clone(), method));
     methods.push((method2.name.clone(), method2));
 
@@ -435,7 +434,7 @@ fn it_works_with_lots_of_things_codec() {
         .block_cooldown(55_555)
         .methods(methods);
 
-    let mut modules: Vec<(String, Module)> = Vec::default();
+    let mut modules: Vec<(ModuleName, Module)> = Vec::default();
     modules.push((module.name.clone(), module));
     modules.push((module2.name.clone(), module2));
 
@@ -505,7 +504,7 @@ fn it_validates_modules() {
 
 #[test]
 fn it_validates_contracts() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract = Contract::new(&[0x12_u8; 32]);
     let contracts = make_contracts(&contract);
@@ -517,7 +516,7 @@ fn it_validates_contracts() {
 
 #[test]
 fn it_invalidates_missing_contract() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract = Contract::new(&[0x12_u8; 32]);
     let contracts = make_contracts(&contract);
@@ -532,7 +531,7 @@ fn it_invalidates_missing_contract() {
 
 #[test]
 fn it_validates_wildcard_contract() {
-    let modules = Vec::<(String, Module)>::default();
+    let modules = Vec::<(ModuleName, Module)>::default();
 
     let contract = Contract::wildcard();
     let contracts = make_contracts(&contract);
@@ -820,7 +819,7 @@ fn registered_methods_have_priority_over_wildcard_methods() {
     let wild_method = Method::new(WILDCARD).block_cooldown(123);
     let registered_method = Method::new("registered_method").block_cooldown(123);
 
-    let mut methods: Vec<(String, Method)> = Vec::default();
+    let mut methods: Vec<(MethodName, Method)> = Vec::default();
     methods.push((wild_method.name.clone(), wild_method));
     methods.push((registered_method.name.clone(), registered_method));
 
@@ -845,7 +844,7 @@ fn registered_modules_have_priority_over_wildcard_modules() {
         .block_cooldown(123)
         .methods(methods);
 
-    let mut modules: Vec<(String, Module)> = Vec::default();
+    let mut modules: Vec<(ModuleName, Module)> = Vec::default();
     modules.push((wild_module.name.clone(), wild_module));
     modules.push((registered_module.name.clone(), registered_module));
 

@@ -5,7 +5,8 @@
 //! Delegated method permissioning of CENNZnut for use in CENNZnet
 //!
 
-use alloc::string::{String, ToString};
+use crate::cennznut::MethodName;
+use alloc::string::{ToString};
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
@@ -14,7 +15,7 @@ use pact::contract::Contract as PactContract;
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
-    pub name: String,
+    pub name: MethodName,
     pub block_cooldown: Option<u32>,
     pub constraints: Option<Vec<u8>>,
 }
@@ -22,7 +23,7 @@ pub struct Method {
 impl Method {
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             block_cooldown: None,
             constraints: None,
         }

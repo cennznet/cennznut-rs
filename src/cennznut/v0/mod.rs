@@ -9,7 +9,6 @@
 mod tests;
 
 use alloc::borrow::ToOwned;
-use alloc::string::String;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
@@ -25,12 +24,12 @@ use crate::{PartialDecode, ValidationErr};
 use contract::Contract;
 use module::Module;
 
-use super::{ContractAddress, CONTRACT_WILDCARD, WILDCARD};
+use super::{ContractAddress, CONTRACT_WILDCARD, ModuleName, WILDCARD};
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
-    pub modules: Vec<(String, Module)>,
+    pub modules: Vec<(ModuleName, Module)>,
     pub contracts: Vec<(ContractAddress, Contract)>,
 }
 
@@ -91,7 +90,7 @@ impl Encode for CENNZnutV0 {
 impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let module_count = input.read_byte()?.swap_bits();
-        let mut modules = Vec::<(String, Module)>::default();
+        let mut modules = Vec::<(ModuleName, Module)>::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
@@ -176,13 +175,14 @@ mod test {
     use super::CENNZnutV0;
     use super::Contract;
     use super::ContractAddress;
+    use super::ModuleName;
     use super::Module;
     use super::CONTRACT_WILDCARD;
 
     #[test]
     fn it_gets_no_contract_from_empty_list() {
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts: Vec::<(ContractAddress, Contract)>::default(),
         };
 
@@ -198,7 +198,7 @@ mod test {
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -214,7 +214,7 @@ mod test {
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -233,7 +233,7 @@ mod test {
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -255,7 +255,7 @@ mod test {
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 

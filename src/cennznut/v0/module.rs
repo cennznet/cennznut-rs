@@ -5,8 +5,9 @@
 //! Delegated runtime module permissioning of CENNZnut for use in CENNZnet
 //!
 
+use crate::cennznut::{ModuleName, MethodName};
 use alloc::borrow::ToOwned;
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
@@ -17,15 +18,15 @@ use super::WILDCARD;
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
-    pub name: String,
+    pub name: ModuleName,
     pub block_cooldown: Option<u32>,
-    pub methods: Vec<(String, Method)>,
+    pub methods: Vec<(MethodName, Method)>,
 }
 
 impl Module {
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             block_cooldown: None,
             methods: Vec::new(),
         }
@@ -36,7 +37,7 @@ impl Module {
         self
     }
 
-    pub fn methods(mut self, methods: Vec<(String, Method)>) -> Self {
+    pub fn methods(mut self, methods: Vec<(MethodName, Method)>) -> Self {
         self.methods = methods;
         self
     }
@@ -108,7 +109,7 @@ impl Decode for Module {
                 None
             };
 
-        let mut methods: Vec<(String, Method)> = Vec::default();
+        let mut methods: Vec<(MethodName, Method)> = Vec::default();
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;
