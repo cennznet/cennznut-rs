@@ -26,6 +26,8 @@ use module::Module;
 
 use super::{ContractAddress, ModuleName, CONTRACT_WILDCARD, WILDCARD};
 
+pub const MAX_METHODS: usize = 128;
+
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {

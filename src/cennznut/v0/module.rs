@@ -11,9 +11,11 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use std::convert::TryFrom;
 
 use super::method::Method;
 use super::WILDCARD;
+use super::MAX_METHODS;
 
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -60,8 +62,14 @@ impl Module {
 
 impl Encode for Module {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        #[allow(clippy::cast_possible_truncation)]
-        let mut method_count_and_has_cooldown_byte = (self.methods.len() as u8) << 1;
+        if self.methods.len() == 0 || self.methods.len() > MAX_METHODS {
+            return;
+        }
+        let method_count = u8::try_from(self.methods.len() - 1);
+        if method_count.is_err() {
+            return
+        }
+        let mut method_count_and_has_cooldown_byte = method_count.unwrap() << 1;
         if self.block_cooldown.is_some() {
             method_count_and_has_cooldown_byte |= 0b0000_0001;
         }
@@ -86,7 +94,7 @@ impl Encode for Module {
 impl Decode for Module {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let block_cooldown_and_method_count: u8 = input.read_byte()?.swap_bits();
-        let method_count = block_cooldown_and_method_count >> 1;
+        let method_count = (block_cooldown_and_method_count >> 1) + 1;
 
         let mut name_buf: [u8; 32] = Default::default();
         input
