@@ -17,6 +17,8 @@ use super::method::Method;
 use super::MAX_METHODS;
 use super::WILDCARD;
 
+const BLOCK_COOLDOWN_MASK: u8 = 0b0000_0001;
+
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
@@ -71,7 +73,7 @@ impl Encode for Module {
         }
         let mut method_count_and_has_cooldown_byte = method_count.unwrap() << 1;
         if self.block_cooldown.is_some() {
-            method_count_and_has_cooldown_byte |= 0b0000_0001;
+            method_count_and_has_cooldown_byte |= BLOCK_COOLDOWN_MASK;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
         let mut name = [0_u8; 32];
@@ -106,7 +108,7 @@ impl Decode for Module {
             .to_string();
 
         let module_cooldown =
-            if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            if (block_cooldown_and_method_count & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
                     input.read_byte()?.swap_bits(),
                     input.read_byte()?.swap_bits(),
