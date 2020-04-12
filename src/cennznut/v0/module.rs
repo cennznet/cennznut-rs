@@ -14,8 +14,8 @@ use codec::{Decode, Encode, Input, Output};
 use std::convert::TryFrom;
 
 use super::method::Method;
-use super::WILDCARD;
 use super::MAX_METHODS;
+use super::WILDCARD;
 
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -67,7 +67,7 @@ impl Encode for Module {
         }
         let method_count = u8::try_from(self.methods.len() - 1);
         if method_count.is_err() {
-            return
+            return;
         }
         let mut method_count_and_has_cooldown_byte = method_count.unwrap() << 1;
         if self.block_cooldown.is_some() {

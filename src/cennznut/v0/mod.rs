@@ -13,6 +13,7 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::{interpret, types::PactType};
+use std::convert::TryFrom;
 
 pub mod contract;
 pub mod method;
@@ -26,6 +27,7 @@ use module::Module;
 
 use super::{ContractAddress, ModuleName, CONTRACT_WILDCARD, WILDCARD};
 
+pub const MAX_MODULES: usize = 256;
 pub const MAX_METHODS: usize = 128;
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
@@ -71,9 +73,15 @@ impl Encode for CENNZnutV0 {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         buf.write(&[0, 0]);
 
-        #[allow(clippy::cast_possible_truncation)]
-        let module_count = (self.modules.len() as u8).swap_bits();
-        buf.push_byte(module_count);
+        if self.modules.len() == 0 || self.modules.len() > MAX_MODULES {
+            return;
+        }
+        let module_count = u8::try_from(self.modules.len() - 1);
+        if module_count.is_err() {
+            return;
+        }
+
+        buf.push_byte(module_count.unwrap().swap_bits());
 
         for (_, module) in &self.modules {
             module.encode_to(buf);
@@ -91,7 +99,7 @@ impl Encode for CENNZnutV0 {
 
 impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let module_count = input.read_byte()?.swap_bits();
+        let module_count = input.read_byte()?.swap_bits() + 1;
         let mut modules = Vec::<(ModuleName, Module)>::default();
 
         for _ in 0..module_count {

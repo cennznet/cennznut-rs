@@ -20,6 +20,19 @@ use pact::interpreter::OpCode;
 use pact::types::{Numeric, PactType, StringLike};
 use std::vec::Vec;
 
+const MODULE_CONTRACT_BYTES: [u8; 67] = [
+    0, 0, 99, 97, 108, 108, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 99, 111, 110, 116, 114, 97, 99, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
+
+fn module_for_contracts() -> Vec<(ModuleName, Module)> {
+    let method = Method::new("contract");
+    let methods = make_methods(&method);
+    let module = Module::new("call").methods(methods);
+    make_modules(&module)
+}
+
 fn make_methods(method: &Method) -> Vec<(MethodName, Method)> {
     let mut methods = Vec::<(MethodName, Method)>::default();
     methods.push((method.name.clone(), method.clone()));
@@ -54,16 +67,16 @@ fn it_works_encode() {
 
     let expected_version = vec![0, 0];
     let expected_modules = vec![
-        128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
-        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
     let expected_contracts = [vec![0x80, 0x00], vec![0x5a_u8; 32]].concat();
     assert_eq!(
         encoded,
         [expected_version, expected_modules, expected_contracts].concat()
     );
-    assert_eq!(encoded[2], 0x80); // 1 module encodes to LE 1 = 0b1000_0000
+    assert_eq!(encoded[2], 0x00); // 1 module encodes to LE 0 = 0b0000_0000
 }
 
 #[test]
@@ -81,8 +94,8 @@ fn it_works_encode_one_module() {
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116,
+            0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116,
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ]
     );
@@ -90,7 +103,7 @@ fn it_works_encode_one_module() {
 
 #[test]
 fn it_works_encode_one_contract() {
-    let modules = Vec::<(ModuleName, Module)>::default();
+    let modules = module_for_contracts();
 
     let contract = Contract::new(&[0x5a_u8; 32]);
     let contracts = make_contracts(&contract);
@@ -98,7 +111,7 @@ fn it_works_encode_one_contract() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let expected_version = vec![0, 0];
-    let expected_modules = vec![0x00];
+    let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
     let expected_contract_header = vec![0x80, 0x00];
     let expected_contract_address = vec![0x5a_u8; 32];
     let expected_contracts = [expected_contract_header, expected_contract_address].concat();
@@ -113,9 +126,9 @@ fn it_works_encode_one_contract() {
 fn it_works_decode() {
     let encoded_version = vec![0, 0];
     let encoded_modules = vec![
-        128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
-        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
     let encoded_contract_header = vec![0x80, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
@@ -147,7 +160,7 @@ fn it_works_encode_with_module_cooldown() {
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 128, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104,
             111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0
@@ -157,7 +170,7 @@ fn it_works_encode_with_module_cooldown() {
 
 #[test]
 fn it_works_encode_with_contract_cooldown() {
-    let modules = Vec::<(ModuleName, Module)>::default();
+    let modules = module_for_contracts();
 
     let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x2222_1111);
     let contracts = make_contracts(&contract);
@@ -165,7 +178,7 @@ fn it_works_encode_with_contract_cooldown() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let expected_version = vec![0, 0];
-    let expected_modules = vec![0x00];
+    let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
     let expected_contract_header = vec![0x80, 0x80];
     // 0xd1 = LE 0x8b
     let expected_contract_address = vec![0xd1_u8; 32];
@@ -187,10 +200,9 @@ fn it_works_encode_with_contract_cooldown() {
 #[test]
 fn it_works_decode_with_module_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 128, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104, 111, 100,
-        95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0x00,
+        0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104, 111, 100, 95,
+        116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     let c0 = CENNZnutV0::try_from(c).unwrap();
@@ -219,7 +231,7 @@ fn it_works_encode_with_method_cooldown() {
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 128, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104,
             111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 222, 0, 0, 0, 0,
@@ -230,10 +242,10 @@ fn it_works_encode_with_method_cooldown() {
 #[test]
 fn it_works_decode_with_method_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 128, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
-        100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        222, 0, 0, 0, 0,
+        0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111, 100,
+        95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
+        0, 0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     let c0 = CENNZnutV0::try_from(c).unwrap();
@@ -255,7 +267,7 @@ fn it_works_decode_with_method_cooldown() {
 
 #[test]
 fn it_works_encode_two_contracts() {
-    let modules = Vec::<(ModuleName, Module)>::default();
+    let modules = module_for_contracts();
 
     let contract_a = Contract::new(&[0x4a_u8; 32]);
     let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_55aa);
@@ -265,7 +277,7 @@ fn it_works_encode_two_contracts() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let expected_version = vec![0, 0];
-    let expected_modules = vec![0x00];
+    let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
     // 0x40 == little endian 2
     let expected_contract_header = vec![0x40];
     // no cooldown
@@ -297,7 +309,7 @@ fn it_works_encode_two_contracts() {
 #[test]
 fn it_works_decode_one_contract() {
     let encoded_version = vec![0, 0];
-    let encoded_modules = vec![0x00];
+    let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
     let encoded_contract_header = vec![0x80, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
     let encoded_contracts: Vec<u8> = [encoded_contract_header, encoded_contract_address].concat();
@@ -307,14 +319,14 @@ fn it_works_decode_one_contract() {
 
     assert_eq!(c.encode(), encoded);
     let c0 = CENNZnutV0::try_from(c).unwrap();
-    assert_eq!(c0.modules.len(), 0);
+    assert_eq!(c0.modules.len(), 1);
     assert_eq!(c0.contracts.len(), 1);
 }
 
 #[test]
 fn it_works_decode_two_contracts() {
     let encoded_version = vec![0, 0];
-    let encoded_modules = vec![0x00];
+    let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
     let encoded_contract_header = vec![0x40]; // 0x40 = little endian 2
     let encoded_contract_a_header = vec![0x00];
     let encoded_contract_a_address = vec![0x4a; 32];
@@ -334,7 +346,7 @@ fn it_works_decode_two_contracts() {
 
     assert_eq!(c.encode(), encoded);
     let c0 = CENNZnutV0::try_from(c).unwrap();
-    assert_eq!(c0.modules.len(), 0);
+    assert_eq!(c0.modules.len(), 1);
     assert_eq!(c0.contracts.len(), 2);
 }
 
@@ -374,8 +386,8 @@ fn it_works_encode_with_constraints() {
     assert_eq!(
         encoded,
         vec![
-            0, 0, 128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116,
+            0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116,
             101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0,
             192, 128, 16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224,
             116, 101, 115, 116, 105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
@@ -393,11 +405,11 @@ fn it_works_encode_with_constraints() {
 #[test]
 fn it_works_decode_with_constraints() {
     let encoded: Vec<u8> = vec![
-        0, 0, 128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101,
-        115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128,
-        16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115,
-        116, 105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
+        0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128, 16,
+        246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
+        105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("it works");
     assert_eq!(c.encode(), encoded);
@@ -445,7 +457,7 @@ fn it_works_with_lots_of_things_codec() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let encoded = vec![
-        0, 0, 64, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
         100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         222, 0, 0, 0, 128, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0,
@@ -637,11 +649,11 @@ fn it_validate_modules_with_empty_constraints() {
 fn it_works_get_pact() {
     // A CENNZnut with constraints set
     let encoded_with: Vec<u8> = vec![
-        0, 0, 128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101,
-        115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128,
-        16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115,
-        116, 105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
+        0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128, 16,
+        246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
+        105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
     ];
 
     let cennznut_with: CENNZnut = Decode::decode(&mut &encoded_with[..]).expect("it works");
@@ -669,9 +681,9 @@ fn it_works_get_pact() {
 
     // A CENNZnut without constraints set
     let encoded_without: Vec<u8> = vec![
-        0, 0, 128, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101,
-        115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
 
     let cennznut_without: CENNZnut = Decode::decode(&mut &encoded_without[..]).expect("it works");

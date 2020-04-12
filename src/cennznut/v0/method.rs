@@ -6,7 +6,7 @@
 //!
 
 use crate::cennznut::MethodName;
-use alloc::string::{ToString};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
