@@ -24,7 +24,7 @@ use crate::{PartialDecode, ValidationErr};
 use contract::Contract;
 use module::Module;
 
-use super::{ContractAddress, CONTRACT_WILDCARD, ModuleName, WILDCARD};
+use super::{ContractAddress, ModuleName, CONTRACT_WILDCARD, WILDCARD};
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -175,8 +175,8 @@ mod test {
     use super::CENNZnutV0;
     use super::Contract;
     use super::ContractAddress;
-    use super::ModuleName;
     use super::Module;
+    use super::ModuleName;
     use super::CONTRACT_WILDCARD;
 
     #[test]

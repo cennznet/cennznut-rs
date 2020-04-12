@@ -8,7 +8,9 @@
 use super::contract::Contract;
 use super::method::Method;
 use super::module::Module;
-use crate::cennznut::{ContractAddress, ModuleName, MethodName, ContractDomain, RuntimeDomain, WILDCARD};
+use crate::cennznut::{
+    ContractAddress, ContractDomain, MethodName, ModuleName, RuntimeDomain, WILDCARD,
+};
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 
 use bit_reverse::ParallelReverse;

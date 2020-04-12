@@ -137,7 +137,7 @@ impl CENNZnut {
 #[cfg(test)]
 mod test {
     use super::v0::{contract::Contract, method::Method, module::Module};
-    use super::{CENNZnut, CENNZnutV0, ContractAddress, ModuleName, MethodName};
+    use super::{CENNZnut, CENNZnutV0, ContractAddress, MethodName, ModuleName};
 
     fn make_methods(method: &Method) -> Vec<(MethodName, Method)> {
         let mut methods = Vec::<(MethodName, Method)>::default();

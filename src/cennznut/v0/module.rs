@@ -5,7 +5,7 @@
 //! Delegated runtime module permissioning of CENNZnut for use in CENNZnet
 //!
 
-use crate::cennznut::{ModuleName, MethodName};
+use crate::cennznut::{MethodName, ModuleName};
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
 use alloc::vec::Vec;
