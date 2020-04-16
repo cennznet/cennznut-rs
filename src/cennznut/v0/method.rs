@@ -5,16 +5,20 @@
 //! Delegated method permissioning of CENNZnut for use in CENNZnet
 //!
 
-use alloc::string::{String, ToString};
+use crate::cennznut::MethodName;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use pact::contract::Contract;
+use pact::contract::Contract as PactContract;
+
+const BLOCK_COOLDOWN_MASK: u8 = 0x01;
+const CONSTRAINTS_MASK: u8 = 0x02;
 
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
-    pub name: String,
+    pub name: MethodName,
     pub block_cooldown: Option<u32>,
     pub constraints: Option<Vec<u8>>,
 }
@@ -22,7 +26,7 @@ pub struct Method {
 impl Method {
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             block_cooldown: None,
             constraints: None,
         }
@@ -39,10 +43,10 @@ impl Method {
     }
 
     /// Returns the Pact contract, if it exists in the Method
-    pub fn get_pact(&self) -> Option<Contract> {
+    pub fn get_pact(&self) -> Option<PactContract> {
         match &self.constraints {
-            Some(constraints) => match Contract::decode(constraints) {
-                Ok(contract) => Some(contract),
+            Some(constraints) => match PactContract::decode(constraints) {
+                Ok(pact_contract) => Some(pact_contract),
                 // This error case can only occur after initializing a Method with bad constraints.
                 // A decoded Method will be checked during decoding.
                 Err(_) => None,
@@ -55,12 +59,12 @@ impl Method {
 impl Encode for Method {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
-            0b1000_0000
+            BLOCK_COOLDOWN_MASK.swap_bits()
         } else {
             0
         };
         let has_constraints_byte: u8 = if self.constraints.is_some() {
-            0b0100_0000
+            CONSTRAINTS_MASK.swap_bits()
         } else {
             0
         };
@@ -100,7 +104,7 @@ impl Decode for Method {
             .to_string();
 
         let block_cooldown: Option<u32> =
-            if (block_cooldown_and_constraints.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            if (block_cooldown_and_constraints & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
                     input.read_byte()?.swap_bits(),
                     input.read_byte()?.swap_bits(),
@@ -112,13 +116,13 @@ impl Decode for Method {
             };
 
         let constraints: Option<Vec<u8>> =
-            if (block_cooldown_and_constraints.swap_bits() & 0b0100_0000) == 0b0100_0000 {
+            if (block_cooldown_and_constraints & CONSTRAINTS_MASK) == CONSTRAINTS_MASK {
                 let constraints_length = (input.read_byte()?.swap_bits()).saturating_add(1);
                 let mut constraints_buf = Vec::<u8>::default();
                 for _ in 0..constraints_length {
                     constraints_buf.push(input.read_byte()?);
                 }
-                if Contract::decode(&constraints_buf).is_err() {
+                if PactContract::decode(&constraints_buf).is_err() {
                     return Err(codec::Error::from("invalid constraints codec"));
                 };
                 Some(constraints_buf)

@@ -5,6 +5,7 @@
 //!
 
 use alloc::fmt::{self, Display, Formatter};
+use alloc::string::String;
 
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
@@ -19,6 +20,8 @@ use core::convert::TryFrom;
 use v0::CENNZnutV0;
 use CENNZnut::V0;
 
+pub type ModuleName = String;
+pub type MethodName = String;
 pub type ContractAddress = [u8; 32];
 pub const CONTRACT_WILDCARD: ContractAddress = [0_u8; 32];
 pub const WILDCARD: &str = "*";
@@ -135,16 +138,16 @@ impl CENNZnut {
 #[cfg(test)]
 mod test {
     use super::v0::{contract::Contract, method::Method, module::Module};
-    use super::{CENNZnut, CENNZnutV0, ContractAddress};
+    use super::{CENNZnut, CENNZnutV0, ContractAddress, MethodName, ModuleName};
 
-    fn make_methods(method: &Method) -> Vec<(String, Method)> {
-        let mut methods = Vec::<(String, Method)>::default();
+    fn make_methods(method: &Method) -> Vec<(MethodName, Method)> {
+        let mut methods = Vec::<(MethodName, Method)>::default();
         methods.push((method.name.clone(), method.clone()));
         methods
     }
 
-    fn make_modules(module: &Module) -> Vec<(String, Module)> {
-        let mut modules = Vec::<(String, Module)>::default();
+    fn make_modules(module: &Module) -> Vec<(ModuleName, Module)> {
+        let mut modules = Vec::<(ModuleName, Module)>::default();
         modules.push((module.name.clone(), module.clone()));
         modules
     }
@@ -174,7 +177,7 @@ mod test {
 
     #[test]
     fn it_validates_v0_contracts() {
-        let modules = Vec::<(String, Module)>::default();
+        let modules = Vec::<(ModuleName, Module)>::default();
 
         let contract = Contract::new(&[0x12_u8; 32]);
         let contracts = make_contracts(&contract);

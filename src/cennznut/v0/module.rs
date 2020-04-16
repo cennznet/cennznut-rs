@@ -5,27 +5,32 @@
 //! Delegated runtime module permissioning of CENNZnut for use in CENNZnet
 //!
 
+use crate::cennznut::{MethodName, ModuleName};
 use alloc::borrow::ToOwned;
-use alloc::string::{String, ToString};
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use core::convert::TryFrom;
 
 use super::method::Method;
+use super::MAX_METHODS;
 use super::WILDCARD;
+
+const BLOCK_COOLDOWN_MASK: u8 = 0b0000_0001;
 
 /// A CENNZnet permission domain module
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
-    pub name: String,
+    pub name: ModuleName,
     pub block_cooldown: Option<u32>,
-    pub methods: Vec<(String, Method)>,
+    pub methods: Vec<(MethodName, Method)>,
 }
 
 impl Module {
     pub fn new(name: &str) -> Self {
         Self {
-            name: name.to_string(),
+            name: name.into(),
             block_cooldown: None,
             methods: Vec::new(),
         }
@@ -36,7 +41,7 @@ impl Module {
         self
     }
 
-    pub fn methods(mut self, methods: Vec<(String, Method)>) -> Self {
+    pub fn methods(mut self, methods: Vec<(MethodName, Method)>) -> Self {
         self.methods = methods;
         self
     }
@@ -59,10 +64,16 @@ impl Module {
 
 impl Encode for Module {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        #[allow(clippy::cast_possible_truncation)]
-        let mut method_count_and_has_cooldown_byte = (self.methods.len() as u8) << 1;
+        if self.methods.is_empty() || self.methods.len() > MAX_METHODS {
+            return;
+        }
+        let method_count = u8::try_from(self.methods.len() - 1);
+        if method_count.is_err() {
+            return;
+        }
+        let mut method_count_and_has_cooldown_byte = method_count.unwrap() << 1;
         if self.block_cooldown.is_some() {
-            method_count_and_has_cooldown_byte |= 0b0000_0001;
+            method_count_and_has_cooldown_byte |= BLOCK_COOLDOWN_MASK;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
         let mut name = [0_u8; 32];
@@ -85,7 +96,7 @@ impl Encode for Module {
 impl Decode for Module {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
         let block_cooldown_and_method_count: u8 = input.read_byte()?.swap_bits();
-        let method_count = block_cooldown_and_method_count >> 1;
+        let method_count = (block_cooldown_and_method_count >> 1) + 1;
 
         let mut name_buf: [u8; 32] = Default::default();
         input
@@ -97,7 +108,7 @@ impl Decode for Module {
             .to_string();
 
         let module_cooldown =
-            if (block_cooldown_and_method_count.swap_bits() & 0b1000_0000) == 0b1000_0000 {
+            if (block_cooldown_and_method_count & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
                     input.read_byte()?.swap_bits(),
                     input.read_byte()?.swap_bits(),
@@ -108,7 +119,7 @@ impl Decode for Module {
                 None
             };
 
-        let mut methods: Vec<(String, Method)> = Vec::default();
+        let mut methods: Vec<(MethodName, Method)> = Vec::default();
 
         for _ in 0..method_count {
             let m: Method = Decode::decode(input)?;

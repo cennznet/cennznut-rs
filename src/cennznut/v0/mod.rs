@@ -9,10 +9,10 @@
 mod tests;
 
 use alloc::borrow::ToOwned;
-use alloc::string::String;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
+use core::convert::TryFrom;
 use pact::interpreter::{interpret, types::PactType};
 
 pub mod contract;
@@ -25,12 +25,17 @@ use crate::{PartialDecode, ValidationErr};
 use contract::Contract;
 use module::Module;
 
-use super::{ContractAddress, CONTRACT_WILDCARD, WILDCARD};
+use super::{ContractAddress, ModuleName, CONTRACT_WILDCARD, WILDCARD};
+
+pub const MAX_MODULES: usize = 256;
+pub const MAX_METHODS: usize = 128;
+pub const MAX_CONTRACTS: usize = 255;
+pub const VERSION_BYTES: [u8; 2] = [0, 0];
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
-    pub modules: Vec<(String, Module)>,
+    pub modules: Vec<(ModuleName, Module)>,
     pub contracts: Vec<(ContractAddress, Contract)>,
 }
 
@@ -68,20 +73,33 @@ impl CENNZnutV0 {
 
 impl Encode for CENNZnutV0 {
     fn encode_to<T: Output>(&self, buf: &mut T) {
-        buf.write(&[0, 0]);
-
-        #[allow(clippy::cast_possible_truncation)]
-        let module_count = (self.modules.len() as u8).swap_bits();
-        buf.push_byte(module_count);
-
-        for (_, module) in &self.modules {
-            module.encode_to(buf);
+        if self.modules.is_empty() || self.modules.len() > MAX_MODULES {
+            return;
+        }
+        let module_count = u8::try_from(self.modules.len() - 1);
+        let contract_count = u8::try_from(self.contracts.len());
+        if module_count.is_err() || contract_count.is_err() {
+            return;
         }
 
-        #[allow(clippy::cast_possible_truncation)]
-        let contract_count = (self.contracts.len() as u8).swap_bits();
-        buf.push_byte(contract_count);
+        // Encode all modules, but make sure each encoding is valid
+        // before modifying the output buffer.
+        let mut module_payload_buf: Vec<u8> = Vec::<u8>::default();
+        for (_, module) in &self.modules {
+            let mut module_buf: Vec<u8> = Vec::<u8>::default();
+            module.encode_to(&mut module_buf);
+            if module_buf.is_empty() {
+                return;
+            }
+            module_payload_buf.write(module_buf.as_slice());
+        }
 
+        buf.write(&VERSION_BYTES);
+
+        buf.push_byte(module_count.unwrap().swap_bits());
+        buf.write(module_payload_buf.as_slice());
+
+        buf.push_byte(contract_count.unwrap().swap_bits());
         for (_, contract) in &self.contracts {
             contract.encode_to(buf);
         }
@@ -90,8 +108,8 @@ impl Encode for CENNZnutV0 {
 
 impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let module_count = input.read_byte()?.swap_bits();
-        let mut modules = Vec::<(String, Module)>::default();
+        let module_count = input.read_byte()?.swap_bits() + 1;
+        let mut modules = Vec::<(ModuleName, Module)>::default();
 
         for _ in 0..module_count {
             let m: Module = Decode::decode(input)?;
@@ -143,8 +161,8 @@ impl CENNZnutV0 {
         let method = module
             .get_method(method_name)
             .ok_or_else(|| ValidationErr::NoPermission(RuntimeDomain::Method))?;
-        if let Some(contract) = method.get_pact() {
-            match interpret(args, contract.data_table.as_ref(), &contract.bytecode) {
+        if let Some(pact) = method.get_pact() {
+            match interpret(args, pact.data_table.as_ref(), &pact.bytecode) {
                 Ok(true) => {}
                 Ok(false) => {
                     return Err(ValidationErr::NoPermission(RuntimeDomain::MethodArguments))
@@ -177,12 +195,13 @@ mod test {
     use super::Contract;
     use super::ContractAddress;
     use super::Module;
+    use super::ModuleName;
     use super::CONTRACT_WILDCARD;
 
     #[test]
     fn it_gets_no_contract_from_empty_list() {
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts: Vec::<(ContractAddress, Contract)>::default(),
         };
 
@@ -198,7 +217,7 @@ mod test {
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -214,7 +233,7 @@ mod test {
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -233,7 +252,7 @@ mod test {
         contracts.push((contract_b.address, contract_b));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
@@ -255,7 +274,7 @@ mod test {
         contracts.push((contract_b.address, contract_b.clone()));
 
         let cennznut = CENNZnutV0 {
-            modules: Vec::<(String, Module)>::default(),
+            modules: Vec::<(ModuleName, Module)>::default(),
             contracts,
         };
 
