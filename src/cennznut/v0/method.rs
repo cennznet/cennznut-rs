@@ -10,8 +10,8 @@ use alloc::string::ToString;
 use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
-use pact::contract::Contract as PactContract;
 use core::convert::TryFrom;
+use pact::contract::Contract as PactContract;
 
 const BLOCK_COOLDOWN_MASK: u8 = 0x01;
 const CONSTRAINTS_MASK: u8 = 0x02;
@@ -90,12 +90,13 @@ impl Encode for Method {
         }
 
         if let Some(constraints) = &self.constraints {
-            let constraints_count = u8::try_from(MAX_CONSTRAINTS.min(constraints.len()).wrapping_sub(1));
+            let constraints_count =
+                u8::try_from(MAX_CONSTRAINTS.min(constraints.len()).wrapping_sub(1));
             if constraints_count.is_ok() {
                 let len_byte: u8 = constraints_count.unwrap();
                 let len: usize = len_byte.into();
                 buf.push_byte(len_byte.swap_bits());
-                buf.write(&constraints[0..(len+1)]);
+                buf.write(&constraints[0..(len + 1)]);
             }
         }
     }
@@ -151,7 +152,7 @@ impl Decode for Method {
 
 #[cfg(test)]
 mod test {
-    use super::{Method, MethodName};
+    use super::Method;
     use codec::{Decode, Encode};
     use std::assert_eq;
 
@@ -177,7 +178,6 @@ mod test {
         assert_eq!(method.encode(), expected);
     }
 
-    // Encoding Tests
     #[test]
     fn it_encodes_only_32_characters_for_name() {
         let method = Method::new("I am Sam, I am Sam, Sam I am; That Sam I am, That Sam I am, I do not like that Sam I am");
@@ -188,57 +188,209 @@ mod test {
 
     #[test]
     fn it_encodes_with_block_cooldown() {
-        let method = Method::new("TestMethod")
-            .block_cooldown(0x10204080);
+        let method = Method::new("TestMethod").block_cooldown(0x10204080);
 
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
-        let expected: Vec<u8> = [vec![0x80_u8], expected_name, remainder, vec![0x01, 0x02, 0x04, 0x08]].concat();
+        let expected: Vec<u8> = [
+            vec![0x80_u8],
+            expected_name,
+            remainder,
+            vec![0x01, 0x02, 0x04, 0x08],
+        ]
+        .concat();
 
         assert_eq!(method.encode(), expected);
     }
 
     #[test]
     fn it_encodes_with_constraints() {
-        let method = Method::new("TestMethod")
-            .constraints(vec![0x55; 9]);
+        let method = Method::new("TestMethod").constraints(vec![0x55; 9]);
 
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
-        let expected: Vec<u8> = [vec![0x40_u8], expected_name, remainder, vec![0x10], vec![0x55; 9]].concat();
+        let expected: Vec<u8> = [
+            vec![0x40_u8],
+            expected_name,
+            remainder,
+            vec![0x10],
+            vec![0x55; 9],
+        ]
+        .concat();
 
         assert_eq!(method.encode(), expected);
     }
 
     #[test]
     fn bad_constraints_are_none() {
-        let method = Method::new("TestMethod")
-            .constraints(vec![0x55; 9]);
+        let method = Method::new("TestMethod").constraints(vec![0x55; 9]);
 
         assert_eq!(method.get_pact(), None);
     }
 
     #[test]
     fn it_encodes_up_to_256_constraints_bytes() {
-        let method = Method::new("TestMethod")
-            .constraints(vec![0x55; 300]);
+        let method = Method::new("TestMethod").constraints(vec![0x55; 300]);
 
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
-        let expected: Vec<u8> = [vec![0x40_u8], expected_name, remainder, vec![0xff], vec![0x55; 256]].concat();
+        let expected: Vec<u8> = [
+            vec![0x40_u8],
+            expected_name,
+            remainder,
+            vec![0xff],
+            vec![0x55; 256],
+        ]
+        .concat();
 
         assert_eq!(method.encode(), expected);
     }
 
     #[test]
     fn it_does_not_encode_constraints_with_0_length() {
-        let method = Method::new("TestMethod")
-            .constraints(vec![0x55; 0]);
+        let method = Method::new("TestMethod").constraints(vec![0x55; 0]);
 
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [vec![0x00_u8], expected_name, remainder].concat();
 
         assert_eq!(method.encode(), expected);
+    }
+
+    // Decoding Tests
+    #[test]
+    fn it_decodes() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [vec![0_u8], name_bytes, remainder].concat();
+
+        let method = Method::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(method.name, "TestMethod");
+        assert_eq!(method.block_cooldown, None);
+        assert_eq!(method.constraints, None);
+    }
+
+    #[test]
+    fn decode_fails_with_junk_bytes_in_the_name() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0xf0_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [vec![0_u8], name_bytes, remainder].concat();
+
+        assert_eq!(
+            Method::decode(&mut &encoded[..]),
+            Err(codec::Error::from("method names should be utf8 encoded"))
+        );
+    }
+
+    #[test]
+    fn it_decodes_with_block_cooldown() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0x80_u8],
+            name_bytes,
+            remainder,
+            vec![0x01, 0x02, 0x04, 0x08],
+        ]
+        .concat();
+
+        let method = Method::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(method.name, "TestMethod");
+        assert_eq!(method.block_cooldown, Some(0x10204080));
+        assert_eq!(method.constraints, None);
+    }
+
+    #[test]
+    fn decode_fails_with_insufficient_bytes_for_block_cooldown() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> =
+            [vec![0x80_u8], name_bytes, remainder, vec![0x01, 0x02, 0x04]].concat();
+
+        assert_eq!(
+            Method::decode(&mut &encoded[..]),
+            Err(codec::Error::from("Not enough data to fill buffer"))
+        );
+    }
+
+    #[test]
+    fn it_decodes_with_pact() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let pact = vec![0x00; 33_usize];
+        let encoded: Vec<u8> = [
+            vec![0x40_u8],
+            name_bytes,
+            remainder,
+            vec![0x04],
+            pact,
+        ]
+        .concat();
+
+        let method = Method::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(method.name, "TestMethod");
+        assert_eq!(method.block_cooldown, None);
+        assert_eq!(method.constraints, Some(vec![0x00; 33]));
+    }
+
+    #[test]
+    fn decode_fails_with_invalid_pact() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let pact = vec![0xff; 33_usize];
+        let encoded: Vec<u8> = [
+            vec![0x40_u8],
+            name_bytes,
+            remainder,
+            vec![0x04],
+            pact,
+        ]
+        .concat();
+
+        assert_eq!(
+            Method::decode(&mut &encoded[..]),
+            Err(codec::Error::from("invalid constraints codec"))
+        );
+    }
+
+    #[test]
+    fn decode_fails_with_insufficient_bytes_for_pact() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let pact = vec![0xff; 32_usize];
+        let encoded: Vec<u8> = [
+            vec![0x40_u8],
+            name_bytes,
+            remainder,
+            vec![0x04],
+            pact,
+        ]
+        .concat();
+
+        assert_eq!(
+            Method::decode(&mut &encoded[..]),
+            Err(codec::Error::from("Not enough data to fill buffer"))
+        );
+    }
+
+    #[test]
+    fn it_decodes_with_block_cooldown_and_pact() {
+        let name_bytes = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let pact = vec![0x00; 33_usize];
+        let encoded: Vec<u8> = [
+            vec![0xc0_u8],
+            name_bytes,
+            remainder,
+            vec![0x01, 0x02, 0x04, 0x08],
+            vec![0x04],
+            pact,
+        ]
+        .concat();
+
+        let method = Method::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(method.name, "TestMethod");
+        assert_eq!(method.block_cooldown, Some(0x10204080));
+        assert_eq!(method.constraints, Some(vec![0x00; 33]));
     }
 }
