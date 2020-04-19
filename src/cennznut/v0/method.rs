@@ -71,8 +71,9 @@ impl Encode for Method {
         buf.push_byte(has_cooldown_byte | has_constraints_byte);
 
         let mut name = [0_u8; 32];
+        let length = 32.min(self.name.len());
 
-        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+        name[0..length].clone_from_slice(&self.name.as_bytes()[0..length]);
 
         buf.write(&name);
 
@@ -135,5 +136,43 @@ impl Decode for Method {
             block_cooldown,
             constraints,
         })
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{Method, MethodName};
+    use codec::{Decode, Encode};
+    use std::assert_eq;
+
+    // Constructor tests
+    #[test]
+    fn it_initializes() {
+        let method = Method::new("TestMethod");
+
+        assert_eq!(method.name, "TestMethod");
+        assert_eq!(method.block_cooldown, None);
+        assert_eq!(method.constraints, None);
+    }
+
+    // Encoding Tests
+    #[test]
+    fn it_encodes() {
+        let method = Method::new("TestMethod");
+
+        let expected_name = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0_u8], expected_name, remainder].concat();
+
+        assert_eq!(method.encode(), expected);
+    }
+
+    // Encoding Tests
+    #[test]
+    fn it_encodes_only_32_characters_for_name() {
+        let method = Method::new("I am Sam, I am Sam, Sam I am; That Sam I am, That Sam I am, I do not like taht Sam I am");
+        let expected_length = 33;
+
+        assert_eq!(method.encode().len(), expected_length);
     }
 }
