@@ -11,9 +11,11 @@ use alloc::vec::Vec;
 use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::contract::Contract as PactContract;
+use core::convert::TryFrom;
 
 const BLOCK_COOLDOWN_MASK: u8 = 0x01;
 const CONSTRAINTS_MASK: u8 = 0x02;
+const MAX_CONSTRAINTS: usize = 256;
 
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -63,8 +65,12 @@ impl Encode for Method {
         } else {
             0
         };
-        let has_constraints_byte: u8 = if self.constraints.is_some() {
-            CONSTRAINTS_MASK.swap_bits()
+        let has_constraints_byte: u8 = if let Some(constraints) = &self.constraints {
+            if constraints.len() > 0 {
+                CONSTRAINTS_MASK.swap_bits()
+            } else {
+                0
+            }
         } else {
             0
         };
@@ -84,9 +90,13 @@ impl Encode for Method {
         }
 
         if let Some(constraints) = &self.constraints {
-            #[allow(clippy::cast_possible_truncation)]
-            buf.push_byte(((constraints.len() as u8).saturating_sub(1)).swap_bits());
-            buf.write(&constraints);
+            let constraints_count = u8::try_from(MAX_CONSTRAINTS.min(constraints.len()).wrapping_sub(1));
+            if constraints_count.is_ok() {
+                let len_byte: u8 = constraints_count.unwrap();
+                let len: usize = len_byte.into();
+                buf.push_byte(len_byte.swap_bits());
+                buf.write(&constraints[0..(len+1)]);
+            }
         }
     }
 }
@@ -170,9 +180,65 @@ mod test {
     // Encoding Tests
     #[test]
     fn it_encodes_only_32_characters_for_name() {
-        let method = Method::new("I am Sam, I am Sam, Sam I am; That Sam I am, That Sam I am, I do not like taht Sam I am");
+        let method = Method::new("I am Sam, I am Sam, Sam I am; That Sam I am, That Sam I am, I do not like that Sam I am");
         let expected_length = 33;
 
         assert_eq!(method.encode().len(), expected_length);
+    }
+
+    #[test]
+    fn it_encodes_with_block_cooldown() {
+        let method = Method::new("TestMethod")
+            .block_cooldown(0x10204080);
+
+        let expected_name = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0x80_u8], expected_name, remainder, vec![0x01, 0x02, 0x04, 0x08]].concat();
+
+        assert_eq!(method.encode(), expected);
+    }
+
+    #[test]
+    fn it_encodes_with_constraints() {
+        let method = Method::new("TestMethod")
+            .constraints(vec![0x55; 9]);
+
+        let expected_name = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0x40_u8], expected_name, remainder, vec![0x10], vec![0x55; 9]].concat();
+
+        assert_eq!(method.encode(), expected);
+    }
+
+    #[test]
+    fn bad_constraints_are_none() {
+        let method = Method::new("TestMethod")
+            .constraints(vec![0x55; 9]);
+
+        assert_eq!(method.get_pact(), None);
+    }
+
+    #[test]
+    fn it_encodes_up_to_256_constraints_bytes() {
+        let method = Method::new("TestMethod")
+            .constraints(vec![0x55; 300]);
+
+        let expected_name = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0x40_u8], expected_name, remainder, vec![0xff], vec![0x55; 256]].concat();
+
+        assert_eq!(method.encode(), expected);
+    }
+
+    #[test]
+    fn it_does_not_encode_constraints_with_0_length() {
+        let method = Method::new("TestMethod")
+            .constraints(vec![0x55; 0]);
+
+        let expected_name = String::from("TestMethod").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0x00_u8], expected_name, remainder].concat();
+
+        assert_eq!(method.encode(), expected);
     }
 }
