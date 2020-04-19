@@ -76,8 +76,10 @@ impl Encode for Module {
             method_count_and_has_cooldown_byte |= BLOCK_COOLDOWN_MASK;
         }
         buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
+
         let mut name = [0_u8; 32];
-        name[0..self.name.len()].clone_from_slice(&self.name.as_bytes());
+        let length = 32.min(self.name.len());
+        name[0..length].clone_from_slice(&self.name.as_bytes()[0..length]);
 
         buf.write(&name);
 
@@ -131,5 +133,60 @@ impl Decode for Module {
             block_cooldown: module_cooldown,
             methods,
         })
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::{Method, Module};
+    use codec::{Decode, Encode};
+    use std::assert_eq;
+
+    macro_rules! methods {
+        ($($name:expr),*) => {
+            vec![
+                $(($name.to_string(), Method::new($name)))*,
+            ]
+        }
+    }
+
+    // Constructor tests
+    #[test]
+    fn it_initializes() {
+        let module = Module::new("TestModule");
+
+        assert_eq!(module.name, "TestModule");
+        assert_eq!(module.block_cooldown, None);
+        assert_eq!(module.methods, vec![]);
+    }
+
+    // Encoding Tests
+    #[test]
+    fn it_encodes() {
+        let module = Module::new("TestModule")
+            .methods(methods!("TestMethod"));
+
+        let expected_name = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [vec![0_u8], expected_name, remainder, Method::new("TestMethod").encode()].concat();
+
+        assert_eq!(module.encode(), expected);
+    }
+
+    #[test]
+    fn it_does_not_encode_without_methods() {
+        let module = Module::new("TestModule");
+
+        assert_eq!(module.encode(), []);
+    }
+
+    #[test]
+    fn it_encodes_only_32_characters_for_name() {
+        let module = Module::new("I don't like green eggs and ham, I don't like you Sam I am;")
+            .methods(methods!("TestMethod"));
+        let expected_length = 33 + 33;
+
+        assert_eq!(module.encode().len(), expected_length);
     }
 }
