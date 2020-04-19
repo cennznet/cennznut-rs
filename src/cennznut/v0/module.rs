@@ -136,7 +136,6 @@ impl Decode for Module {
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::{Method, Module};
@@ -146,7 +145,7 @@ mod test {
     macro_rules! methods {
         ($($name:expr),*) => {
             vec![
-                $(($name.to_string(), Method::new($name)))*,
+                $( ( $name.to_string(), Method::new($name) ), )*
             ]
         }
     }
@@ -164,12 +163,17 @@ mod test {
     // Encoding Tests
     #[test]
     fn it_encodes() {
-        let module = Module::new("TestModule")
-            .methods(methods!("TestMethod"));
+        let module = Module::new("TestModule").methods(methods!("TestMethod"));
 
         let expected_name = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
-        let expected: Vec<u8> = [vec![0_u8], expected_name, remainder, Method::new("TestMethod").encode()].concat();
+        let expected: Vec<u8> = [
+            vec![0_u8],
+            expected_name,
+            remainder,
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
 
         assert_eq!(module.encode(), expected);
     }
@@ -188,5 +192,153 @@ mod test {
         let expected_length = 33 + 33;
 
         assert_eq!(module.encode().len(), expected_length);
+    }
+
+    #[test]
+    fn it_encodes_with_block_cooldown() {
+        let module = Module::new("TestModule")
+            .methods(methods!("TestMethod"))
+            .block_cooldown(0x10204080);
+
+        let expected_name = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [
+            vec![0x80_u8],
+            expected_name,
+            remainder,
+            vec![0x01, 0x02, 0x04, 0x08],
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
+
+        assert_eq!(module.encode(), expected);
+    }
+
+    #[test]
+    fn it_encodes_with_many_methods() {
+        let module = Module::new("TestModule")
+            .methods(methods!("I", "do", "not", "like", "them", "Sam", "I am"));
+
+        let expected_name = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
+        let expected: Vec<u8> = [
+            vec![0x30_u8],
+            expected_name,
+            remainder,
+            Method::new("I").encode(),
+            Method::new("do").encode(),
+            Method::new("not").encode(),
+            Method::new("like").encode(),
+            Method::new("them").encode(),
+            Method::new("Sam").encode(),
+            Method::new("I am").encode(),
+        ]
+        .concat();
+
+        assert_eq!(module.encode(), expected);
+    }
+
+    // Decoding Tests
+    #[test]
+    fn it_decodes() {
+        let name_bytes = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0_u8],
+            name_bytes,
+            remainder,
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
+
+        let module = Module::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(module.name, "TestModule");
+        assert_eq!(module.block_cooldown, None);
+        assert_eq!(module.methods.len(), 1);
+    }
+
+    #[test]
+    fn decode_fails_with_junk_bytes_in_the_name() {
+        let name_bytes = String::from("TestModule").into_bytes();
+        let remainder = vec![0xf0_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0_u8],
+            name_bytes,
+            remainder,
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
+
+        assert_eq!(
+            Module::decode(&mut &encoded[..]),
+            Err(codec::Error::from("module names should be utf8 encoded"))
+        );
+    }
+
+    #[test]
+    fn it_decodes_with_block_cooldown() {
+        let name_bytes = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0x80_u8],
+            name_bytes,
+            remainder,
+            vec![0x01, 0x02, 0x04, 0x08],
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
+
+        let module = Module::decode(&mut &encoded[..]).unwrap();
+        assert_eq!(module.name, "TestModule");
+        assert_eq!(module.block_cooldown, Some(0x10204080));
+        assert_eq!(module.methods.len(), 1);
+    }
+
+    #[test]
+    fn decode_fails_with_insufficient_bytes_for_block_cooldown() {
+        let name_bytes = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0x80_u8],
+            name_bytes,
+            remainder,
+            vec![0x01, 0x02],
+            Method::new("TestMethod").encode(),
+        ]
+        .concat();
+
+        assert_eq!(
+            Module::decode(&mut &encoded[..]),
+            Err(codec::Error::from("expected 32 byte method name"))
+        );
+    }
+
+    #[test]
+    fn it_decodes_with_many_methods() {
+        let name_bytes = String::from("TestModule").into_bytes();
+        let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
+        let encoded: Vec<u8> = [
+            vec![0x30_u8],
+            name_bytes,
+            remainder,
+            Method::new("I").encode(),
+            Method::new("do").encode(),
+            Method::new("not").encode(),
+            Method::new("like").encode(),
+            Method::new("them").encode(),
+            Method::new("Sam").encode(),
+            Method::new("I am").encode(),
+        ]
+        .concat();
+
+        let module = Module::decode(&mut &encoded[..]).unwrap();
+
+        assert_eq!(module.methods[0].0, "I");
+        assert_eq!(module.methods[1].0, "do");
+        assert_eq!(module.methods[2].0, "not");
+        assert_eq!(module.methods[3].0, "like");
+        assert_eq!(module.methods[4].0, "them");
+        assert_eq!(module.methods[5].0, "Sam");
+        assert_eq!(module.methods[6].0, "I am");
     }
 }

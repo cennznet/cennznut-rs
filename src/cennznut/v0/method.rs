@@ -66,10 +66,10 @@ impl Encode for Method {
             0
         };
         let has_constraints_byte: u8 = if let Some(constraints) = &self.constraints {
-            if constraints.len() > 0 {
-                CONSTRAINTS_MASK.swap_bits()
-            } else {
+            if constraints.is_empty() {
                 0
+            } else {
+                CONSTRAINTS_MASK.swap_bits()
             }
         } else {
             0
@@ -96,7 +96,7 @@ impl Encode for Method {
                 let len_byte: u8 = constraints_count.unwrap();
                 let len: usize = len_byte.into();
                 buf.push_byte(len_byte.swap_bits());
-                buf.write(&constraints[0..(len + 1)]);
+                buf.write(&constraints[0..=len]);
             }
         }
     }
@@ -318,14 +318,7 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0x00; 33_usize];
-        let encoded: Vec<u8> = [
-            vec![0x40_u8],
-            name_bytes,
-            remainder,
-            vec![0x04],
-            pact,
-        ]
-        .concat();
+        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
 
         let method = Method::decode(&mut &encoded[..]).unwrap();
         assert_eq!(method.name, "TestMethod");
@@ -338,14 +331,7 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0xff; 33_usize];
-        let encoded: Vec<u8> = [
-            vec![0x40_u8],
-            name_bytes,
-            remainder,
-            vec![0x04],
-            pact,
-        ]
-        .concat();
+        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
 
         assert_eq!(
             Method::decode(&mut &encoded[..]),
@@ -358,14 +344,7 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0xff; 32_usize];
-        let encoded: Vec<u8> = [
-            vec![0x40_u8],
-            name_bytes,
-            remainder,
-            vec![0x04],
-            pact,
-        ]
-        .concat();
+        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
 
         assert_eq!(
             Method::decode(&mut &encoded[..]),
