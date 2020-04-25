@@ -81,7 +81,9 @@ impl Encode for Module {
         let length = 32.min(self.name.len());
         name[0..length].clone_from_slice(&self.name.as_bytes()[0..length]);
 
-        buf.write(&name);
+        let name_le: Vec<u8> = name.to_vec().iter().map(|c| c.swap_bits()).collect();
+
+        buf.write(&name_le);
 
         if let Some(cooldown) = self.block_cooldown {
             for b in &cooldown.to_le_bytes() {
@@ -104,7 +106,14 @@ impl Decode for Module {
         input
             .read(&mut name_buf)
             .map_err(|_| "expected 32 byte module name")?;
-        let name = core::str::from_utf8(&name_buf)
+
+        let name_be: Vec<u8> = name_buf
+            .to_vec()
+            .iter()
+            .map(|&character| character.swap_bits())
+            .collect();
+
+        let name = core::str::from_utf8(&name_be)
             .map_err(|_| codec::Error::from("module names should be utf8 encoded"))?
             .trim_matches(char::from(0))
             .to_string();
@@ -138,9 +147,17 @@ impl Decode for Module {
 
 #[cfg(test)]
 mod test {
-    use super::{Method, Module};
-    use codec::{Decode, Encode};
+    use super::*;
     use std::assert_eq;
+
+    // Helper for creating Little Endian string name
+    fn le_vec_from_name(name: &str) -> Vec<u8> {
+        String::from(name)
+            .into_bytes()
+            .iter()
+            .map(|c| c.swap_bits())
+            .collect()
+    }
 
     macro_rules! methods {
         ($($name:expr),*) => {
@@ -165,7 +182,7 @@ mod test {
     fn it_encodes() {
         let module = Module::new("TestModule").methods(methods!("TestMethod"));
 
-        let expected_name = String::from("TestModule").into_bytes();
+        let expected_name = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
             vec![0_u8],
@@ -200,7 +217,7 @@ mod test {
             .methods(methods!("TestMethod"))
             .block_cooldown(0x10204080);
 
-        let expected_name = String::from("TestModule").into_bytes();
+        let expected_name = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
             vec![0x80_u8],
@@ -219,7 +236,7 @@ mod test {
         let module = Module::new("TestModule")
             .methods(methods!("I", "do", "not", "like", "them", "Sam", "I am"));
 
-        let expected_name = String::from("TestModule").into_bytes();
+        let expected_name = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
             vec![0x30_u8],
@@ -241,7 +258,7 @@ mod test {
     // Decoding Tests
     #[test]
     fn it_decodes() {
-        let name_bytes = String::from("TestModule").into_bytes();
+        let name_bytes = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
             vec![0_u8],
@@ -259,8 +276,8 @@ mod test {
 
     #[test]
     fn decode_fails_with_junk_bytes_in_the_name() {
-        let name_bytes = String::from("TestModule").into_bytes();
-        let remainder = vec![0xf0_u8; 32_usize - name_bytes.len()];
+        let name_bytes = le_vec_from_name("TestModule");
+        let remainder = vec![0xff_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
             vec![0_u8],
             name_bytes,
@@ -277,7 +294,7 @@ mod test {
 
     #[test]
     fn it_decodes_with_block_cooldown() {
-        let name_bytes = String::from("TestModule").into_bytes();
+        let name_bytes = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
             vec![0x80_u8],
@@ -296,7 +313,7 @@ mod test {
 
     #[test]
     fn decode_fails_with_insufficient_bytes_for_block_cooldown() {
-        let name_bytes = String::from("TestModule").into_bytes();
+        let name_bytes = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
             vec![0x80_u8],
@@ -315,7 +332,7 @@ mod test {
 
     #[test]
     fn it_decodes_with_many_methods() {
-        let name_bytes = String::from("TestModule").into_bytes();
+        let name_bytes = le_vec_from_name("TestModule");
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
             vec![0x30_u8],

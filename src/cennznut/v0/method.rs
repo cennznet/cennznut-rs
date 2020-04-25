@@ -113,13 +113,13 @@ impl Decode for Method {
             .read(&mut name_buf)
             .map_err(|_| "expected 32 byte method name")?;
 
-        let name_ref: Vec<u8> = name_buf
+        let name_be: Vec<u8> = name_buf
             .to_vec()
             .iter()
             .map(|&character| character.swap_bits())
             .collect();
 
-        let name = core::str::from_utf8(&name_ref)
+        let name = core::str::from_utf8(&name_be)
             .map_err(|_| codec::Error::from("method names should be utf8 encoded"))?
             .trim_matches(char::from(0))
             .to_string();
@@ -165,7 +165,7 @@ mod test {
     use codec::{Decode, Encode};
     use std::assert_eq;
 
-    // Helper
+    // Helper for creating Little Endian string name
     fn le_vec_from_name(name: &str) -> Vec<u8> {
         String::from(name)
             .into_bytes()
