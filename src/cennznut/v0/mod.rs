@@ -31,6 +31,7 @@ pub const MAX_MODULES: usize = 256;
 pub const MAX_METHODS: usize = 128;
 pub const MAX_CONTRACTS: usize = 255;
 pub const VERSION_BYTES: [u8; 2] = [0, 0];
+pub const MAX_CENNZNUT_BYTES: usize = 0xffff;
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -94,14 +95,21 @@ impl Encode for CENNZnutV0 {
             module_payload_buf.write(module_buf.as_slice());
         }
 
-        buf.write(&VERSION_BYTES);
+        let mut preliminary_buf: Vec<u8> = Vec::<u8>::default();
 
-        buf.push_byte(module_count.unwrap().swap_bits());
-        buf.write(module_payload_buf.as_slice());
+        preliminary_buf.write(&VERSION_BYTES);
 
-        buf.push_byte(contract_count.unwrap().swap_bits());
+        preliminary_buf.push_byte(module_count.unwrap().swap_bits());
+        preliminary_buf.write(module_payload_buf.as_slice());
+
+        preliminary_buf.push_byte(contract_count.unwrap().swap_bits());
         for (_, contract) in &self.contracts {
-            contract.encode_to(buf);
+            contract.encode_to(&mut preliminary_buf);
+        }
+
+        // Avoid writing outside of the allocated domain buffer
+        if preliminary_buf.len() <= MAX_CENNZNUT_BYTES {
+            buf.write(preliminary_buf.as_slice());
         }
     }
 }
