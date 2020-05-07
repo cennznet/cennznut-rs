@@ -31,7 +31,7 @@ pub const MAX_MODULES: usize = 256;
 pub const MAX_METHODS: usize = 128;
 pub const MAX_CONTRACTS: usize = 255;
 pub const VERSION_BYTES: [u8; 2] = [0, 0];
-pub const MAX_CENNZNUT_BYTES: usize = 0xffff;
+pub const MAX_CENNZNUT_BYTES: usize = u16::max_value() as usize;
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -95,7 +95,7 @@ impl Encode for CENNZnutV0 {
             module_payload_buf.write(module_buf.as_slice());
         }
 
-        let mut preliminary_buf: Vec<u8> = Vec::<u8>::default();
+        let mut preliminary_buf = Vec::<u8>::default();
 
         preliminary_buf.write(&VERSION_BYTES);
 
