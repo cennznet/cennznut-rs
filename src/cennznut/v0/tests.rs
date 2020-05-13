@@ -935,3 +935,22 @@ fn it_fails_to_encode_with_too_many_contracts() {
     let cennznut = CENNZnutV0 { modules, contracts };
     assert_eq!(cennznut.encode(), []);
 }
+
+#[test]
+fn it_fails_to_encode_when_cennznut_is_too_large() {
+    // 33 bytes per method, 33 + 33 * Method bytes per module
+    // if 64 methods, per 64 modules, total bytes > 137,000
+    let mut methods: Vec<(MethodName, Method)> = Vec::default();
+    let mut modules: Vec<(ModuleName, Module)> = Vec::default();
+    for x in 0..64 + 1 {
+        let method = Method::new(&x.to_string());
+        methods.push((method.name.clone(), method));
+    }
+    for x in 0..64 + 1 {
+        let module = Module::new(&x.to_string()).methods(methods.clone());
+        modules.push((module.name.clone(), module));
+    }
+    let contracts = Vec::<(ContractAddress, Contract)>::default();
+    let cennznut = CENNZnutV0 { modules, contracts };
+    assert_eq!(cennznut.encode(), []);
+}
