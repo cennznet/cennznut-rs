@@ -6,7 +6,6 @@
 //!
 
 use crate::cennznut::{ContractAddress, CONTRACT_WILDCARD};
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 
 const BLOCK_COOLDOWN_MASK: u8 = 0x01;
@@ -46,16 +45,16 @@ impl Encode for Contract {
         } else {
             0x00_u8
         };
-        buf.push_byte(has_cooldown_byte.swap_bits());
+        buf.push_byte(has_cooldown_byte);
         let address: ContractAddress = self.address;
 
         for byte in &address {
-            buf.push_byte(byte.swap_bits());
+            buf.push_byte(*byte);
         }
 
         if let Some(cooldown) = self.block_cooldown {
             for b in &cooldown.to_le_bytes() {
-                buf.push_byte(b.swap_bits());
+                buf.push_byte(*b);
             }
         }
     }
@@ -63,7 +62,7 @@ impl Encode for Contract {
 
 impl Decode for Contract {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let has_cooldown_byte: u8 = input.read_byte()?.swap_bits();
+        let has_cooldown_byte: u8 = input.read_byte()?;
         let has_cooldown: bool = (has_cooldown_byte & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK;
 
         let mut address = ContractAddress::default();
@@ -71,16 +70,12 @@ impl Decode for Contract {
             .read(&mut address)
             .map_err(|_| "expected 32 byte address")?;
 
-        for item in &mut address {
-            *item = item.swap_bits();
-        }
-
         let block_cooldown = if has_cooldown {
             Some(u32::from_le_bytes([
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
-                input.read_byte()?.swap_bits(),
+                input.read_byte()?,
+                input.read_byte()?,
+                input.read_byte()?,
+                input.read_byte()?,
             ]))
         } else {
             None
@@ -95,7 +90,7 @@ impl Decode for Contract {
 
 #[cfg(test)]
 mod test {
-    use super::{Contract, ContractAddress, CONTRACT_WILDCARD};
+    use super::{Contract, ContractAddress, BLOCK_COOLDOWN_MASK, CONTRACT_WILDCARD};
     use codec::{Decode, Encode};
     use std::assert_eq;
 
@@ -168,7 +163,7 @@ mod test {
 
         assert_eq!(
             result,
-            [vec![0x00], vec![0x80; 16], vec![0x40; 16]].concat()
+            [vec![0x00], vec![0x01; 16], vec![0x02; 16]].concat()
         );
     }
 
@@ -191,26 +186,24 @@ mod test {
 
     #[test]
     fn it_encodes_block_cooldown() {
-        // 0b1000_0000 = cooldown flag (note: bits get flipped)
-        let has_cooldown_byte = 0x80;
         let address_length: usize = 32;
         let cooldown_length: usize = 4;
         let address_value: u8 = 0x00;
         let expected_length: usize = address_length + cooldown_length + 1;
 
         let contract = Contract::wildcard().block_cooldown(0x1337_b33f);
-
         let result: Vec<u8> = contract.encode();
+
         assert_eq!(result.len(), expected_length);
-        assert_eq!(result[0], has_cooldown_byte);
+        assert_eq!(result[0], BLOCK_COOLDOWN_MASK);
         for i in 0..address_length {
             assert_eq!(result[i + 1], address_value);
         }
-        // 1337_b33f flipped becomes fccd_ecc8 (due to LE encoding)
-        assert_eq!(result[address_length + 1], 0xfc);
-        assert_eq!(result[address_length + 2], 0xcd);
-        assert_eq!(result[address_length + 3], 0xec);
-        assert_eq!(result[address_length + 4], 0xc8);
+        // LE 1337_b33f
+        assert_eq!(result[address_length + 1], 0x3f);
+        assert_eq!(result[address_length + 2], 0xb3);
+        assert_eq!(result[address_length + 3], 0x37);
+        assert_eq!(result[address_length + 4], 0x13);
     }
 
     // Decoding tests
@@ -224,7 +217,7 @@ mod test {
 
         let contract_expected = Contract::new(&contract_address);
 
-        let encoded = [vec![0x00], vec![0x80; 16], vec![0x40; 16]].concat();
+        let encoded = [vec![0x00], vec![0x01; 16], vec![0x02; 16]].concat();
 
         let contract_result = Contract::decode(&mut &encoded[..]).expect("it works");
 
@@ -236,11 +229,10 @@ mod test {
     fn it_decodes_block_cooldown() {
         let contract_expected = Contract::wildcard().block_cooldown(0x1337_b33f);
 
-        // 0b1000_0000 = cooldown flag (note: bits get flipped)
         let encoded = vec![
-            0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0xfc, 0xcd, 0xec, 0xc8,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x3f, 0xb3, 0x37, 0x13,
         ];
 
         let constract_result = Contract::decode(&mut &encoded[..]).expect("it works");
@@ -252,7 +244,7 @@ mod test {
     #[test]
     fn it_throws_error_on_short_address_length() {
         let encoded = vec![
-            0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ];
 
@@ -276,7 +268,7 @@ mod test {
     #[test]
     fn it_throws_error_on_missing_cooldown() {
         let encoded = vec![
-            0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00,
         ];

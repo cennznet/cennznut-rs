@@ -173,18 +173,16 @@ fn it_works_encode_with_module_cooldown() {
 fn it_works_encode_with_contract_cooldown() {
     let modules = module_for_contracts();
 
-    let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x2222_1111);
+    let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x4433_2211);
     let contracts = make_contracts(&contract);
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x80, 0x80];
-    // 0xd1 = LE 0x8b
-    let expected_contract_address = vec![0xd1_u8; 32];
-    // Little endian representation of 0x22221111 is 0x88884444
-    let expected_contract_cooldown = vec![0x88, 0x88, 0x44, 0x44];
+    let expected_contract_header = vec![0x80, 0x01];
+    let expected_contract_address = vec![0x8b_u8; 32];
+    let expected_contract_cooldown = vec![0x11, 0x22, 0x33, 0x44];
     let expected_contracts = [
         expected_contract_header,
         expected_contract_address,
@@ -271,7 +269,7 @@ fn it_works_encode_two_contracts() {
     let modules = module_for_contracts();
 
     let contract_a = Contract::new(&[0x4a_u8; 32]);
-    let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_55aa);
+    let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_33cc);
     let mut contracts = make_contracts(&contract_a);
     contracts.push((contract_b.address, contract_b));
 
@@ -279,18 +277,14 @@ fn it_works_encode_two_contracts() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    // 0x40 == little endian 2
     let expected_contract_header = vec![0x40];
     // no cooldown
     let expected_contract_a_header = vec![0x00];
-    // 0x52 = LE 0x4a
-    let expected_contract_a_address = vec![0x52_u8; 32];
-    // cooldown
-    let expected_contract_b_header = vec![0x80];
-    // 0xd1 = LE 0x8b
-    let expected_contract_b_address = vec![0xd1_u8; 32];
-    // Little endian representation of 0xaa5555aa is 0x55aaaa55
-    let expected_contract_b_cooldown = vec![0x55, 0xaa, 0xaa, 0x55];
+    let expected_contract_a_address = vec![0x4a_u8; 32];
+    // has cooldown
+    let expected_contract_b_header = vec![0x01];
+    let expected_contract_b_address = vec![0x8b_u8; 32];
+    let expected_contract_b_cooldown = vec![0xcc, 0x33, 0x55, 0xaa];
     let expected_contracts = [
         expected_contract_header,
         expected_contract_a_header,
