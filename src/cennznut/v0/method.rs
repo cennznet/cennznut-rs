@@ -8,7 +8,6 @@
 use crate::cennznut::MethodName;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 use pact::contract::Contract as PactContract;

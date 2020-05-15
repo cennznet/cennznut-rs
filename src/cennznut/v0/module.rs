@@ -9,7 +9,6 @@ use crate::cennznut::{MethodName, ModuleName};
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 
@@ -75,7 +74,7 @@ impl Encode for Module {
         if self.block_cooldown.is_some() {
             method_count_and_has_cooldown_byte |= BLOCK_COOLDOWN_MASK;
         }
-        buf.push_byte(method_count_and_has_cooldown_byte.swap_bits());
+        buf.push_byte(method_count_and_has_cooldown_byte);
 
         let mut name = [0_u8; 32];
         let length = 32.min(self.name.len());
@@ -85,7 +84,7 @@ impl Encode for Module {
 
         if let Some(cooldown) = self.block_cooldown {
             for b in &cooldown.to_le_bytes() {
-                buf.push_byte(b.swap_bits());
+                buf.push_byte(*b);
             }
         }
 
@@ -97,7 +96,7 @@ impl Encode for Module {
 
 impl Decode for Module {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let block_cooldown_and_method_count: u8 = input.read_byte()?.swap_bits();
+        let block_cooldown_and_method_count: u8 = input.read_byte()?;
         let method_count = (block_cooldown_and_method_count >> 1) + 1;
 
         let mut name_buf: [u8; 32] = Default::default();
@@ -112,10 +111,10 @@ impl Decode for Module {
         let module_cooldown =
             if (block_cooldown_and_method_count & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?,
+                    input.read_byte()?,
+                    input.read_byte()?,
+                    input.read_byte()?,
                 ]))
             } else {
                 None
@@ -138,7 +137,7 @@ impl Decode for Module {
 
 #[cfg(test)]
 mod test {
-    use super::{Method, Module};
+    use super::{Method, Module, BLOCK_COOLDOWN_MASK};
     use codec::{Decode, Encode};
     use std::assert_eq;
 
@@ -203,10 +202,10 @@ mod test {
         let expected_name = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x80_u8],
+            vec![BLOCK_COOLDOWN_MASK],
             expected_name,
             remainder,
-            vec![0x01, 0x02, 0x04, 0x08],
+            vec![0x80, 0x40, 0x20, 0x10],
             Method::new("TestMethod").encode(),
         ]
         .concat();
@@ -222,7 +221,7 @@ mod test {
         let expected_name = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x30_u8],
+            vec![0x06_u8 << 1],
             expected_name,
             remainder,
             Method::new("I").encode(),
@@ -280,10 +279,10 @@ mod test {
         let name_bytes = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
-            vec![0x80_u8],
+            vec![BLOCK_COOLDOWN_MASK],
             name_bytes,
             remainder,
-            vec![0x01, 0x02, 0x04, 0x08],
+            vec![0x80, 0x40, 0x20, 0x10],
             Method::new("TestMethod").encode(),
         ]
         .concat();
@@ -299,7 +298,7 @@ mod test {
         let name_bytes = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
-            vec![0x80_u8],
+            vec![BLOCK_COOLDOWN_MASK],
             name_bytes,
             remainder,
             vec![0x01, 0x02],
@@ -318,7 +317,7 @@ mod test {
         let name_bytes = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
-            vec![0x30_u8],
+            vec![0x06_u8 << 1],
             name_bytes,
             remainder,
             Method::new("I").encode(),

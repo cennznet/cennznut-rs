@@ -7,7 +7,6 @@
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::String;
 
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::types::PactType;
 

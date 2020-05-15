@@ -10,7 +10,6 @@ mod tests;
 
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 use pact::interpreter::{interpret, types::PactType};
