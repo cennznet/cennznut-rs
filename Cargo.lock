@@ -74,7 +74,6 @@ dependencies = [
 name = "cennznut"
 version = "0.1.1"
 dependencies = [
- "bit_reverse 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "pact 0.1.0 (git+https://github.com/cennznet/pact?branch=0.1.0)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
