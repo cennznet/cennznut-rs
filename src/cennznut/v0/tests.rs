@@ -71,7 +71,7 @@ fn it_works_encode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let expected_contracts = [vec![0x80, 0x00], vec![0x5a_u8; 32]].concat();
+    let expected_contracts = [vec![0x01, 0x00], vec![0x5a_u8; 32]].concat();
     assert_eq!(
         encoded,
         [expected_version, expected_modules, expected_contracts].concat()
@@ -112,7 +112,7 @@ fn it_works_encode_one_contract() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x80, 0x00];
+    let expected_contract_header = vec![0x01, 0x00];
     let expected_contract_address = vec![0x5a_u8; 32];
     let expected_contracts = [expected_contract_header, expected_contract_address].concat();
 
@@ -130,7 +130,7 @@ fn it_works_decode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let encoded_contract_header = vec![0x80, 0x00];
+    let encoded_contract_header = vec![0x01, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
     let encoded_contracts: Vec<u8> = [encoded_contract_header, encoded_contract_address].concat();
 
@@ -179,7 +179,7 @@ fn it_works_encode_with_contract_cooldown() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x80, 0x01];
+    let expected_contract_header = vec![0x01, 0x01];
     let expected_contract_address = vec![0x8b_u8; 32];
     let expected_contract_cooldown = vec![0x11, 0x22, 0x33, 0x44];
     let expected_contracts = [
@@ -276,7 +276,7 @@ fn it_works_encode_two_contracts() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x40];
+    let expected_contract_header = vec![0x02];
     // no cooldown
     let expected_contract_a_header = vec![0x00];
     let expected_contract_a_address = vec![0x4a_u8; 32];
@@ -304,7 +304,7 @@ fn it_works_encode_two_contracts() {
 fn it_works_decode_one_contract() {
     let encoded_version = vec![0, 0];
     let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let encoded_contract_header = vec![0x80, 0x00];
+    let encoded_contract_header = vec![0x01, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
     let encoded_contracts: Vec<u8> = [encoded_contract_header, encoded_contract_address].concat();
 
@@ -321,7 +321,7 @@ fn it_works_decode_one_contract() {
 fn it_works_decode_two_contracts() {
     let encoded_version = vec![0, 0];
     let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let encoded_contract_header = vec![0x40]; // 0x40 = little endian 2
+    let encoded_contract_header = vec![0x02];
     let encoded_contract_a_header = vec![0x00];
     let encoded_contract_a_address = vec![0x4a; 32];
     let encoded_contract_b_header = vec![0x00];
@@ -445,7 +445,7 @@ fn it_works_with_lots_of_things_codec() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let encoded = vec![
-        0, 0, 128, 3, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 3, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 1, 109, 101, 116, 104, 111, 100, 95,
         116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0,
         0, 0, 1, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0,
