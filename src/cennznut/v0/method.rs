@@ -13,9 +13,9 @@ use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 use pact::contract::Contract as PactContract;
 
-const BLOCK_COOLDOWN_MASK: u8 = 0x01;
-const CONSTRAINTS_MASK: u8 = 0x02;
-const MAX_CONSTRAINTS: usize = 256;
+pub const BLOCK_COOLDOWN_MASK: u8 = 0x01;
+pub const CONSTRAINTS_MASK: u8 = 0x02;
+pub const MAX_CONSTRAINTS: usize = 256;
 
 /// A CENNZnet permission domain module method
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
@@ -61,7 +61,7 @@ impl Method {
 impl Encode for Method {
     fn encode_to<T: Output>(&self, buf: &mut T) {
         let has_cooldown_byte: u8 = if self.block_cooldown.is_some() {
-            BLOCK_COOLDOWN_MASK.swap_bits()
+            BLOCK_COOLDOWN_MASK
         } else {
             0
         };
@@ -69,7 +69,7 @@ impl Encode for Method {
             if constraints.is_empty() {
                 0
             } else {
-                CONSTRAINTS_MASK.swap_bits()
+                CONSTRAINTS_MASK
             }
         } else {
             0
@@ -85,7 +85,7 @@ impl Encode for Method {
 
         if let Some(cooldown) = self.block_cooldown {
             for b in &cooldown.to_le_bytes() {
-                buf.push_byte(b.swap_bits());
+                buf.push_byte(*b);
             }
         }
 
@@ -95,7 +95,7 @@ impl Encode for Method {
             if constraints_count.is_ok() {
                 let len_byte: u8 = constraints_count.unwrap();
                 let len: usize = len_byte.into();
-                buf.push_byte(len_byte.swap_bits());
+                buf.push_byte(len_byte);
                 buf.write(&constraints[0..=len]);
             }
         }
@@ -104,7 +104,7 @@ impl Encode for Method {
 
 impl Decode for Method {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let block_cooldown_and_constraints = input.read_byte()?.swap_bits();
+        let block_cooldown_and_constraints = input.read_byte()?;
 
         let mut name_buf: [u8; 32] = Default::default();
         input
@@ -118,10 +118,10 @@ impl Decode for Method {
         let block_cooldown: Option<u32> =
             if (block_cooldown_and_constraints & BLOCK_COOLDOWN_MASK) == BLOCK_COOLDOWN_MASK {
                 Some(u32::from_le_bytes([
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
-                    input.read_byte()?.swap_bits(),
+                    input.read_byte()?,
+                    input.read_byte()?,
+                    input.read_byte()?,
+                    input.read_byte()?,
                 ]))
             } else {
                 None
@@ -129,7 +129,7 @@ impl Decode for Method {
 
         let constraints: Option<Vec<u8>> =
             if (block_cooldown_and_constraints & CONSTRAINTS_MASK) == CONSTRAINTS_MASK {
-                let constraints_length = (input.read_byte()?.swap_bits()).saturating_add(1);
+                let constraints_length = (input.read_byte()?).saturating_add(1);
                 let mut constraints_buf = Vec::<u8>::default();
                 for _ in 0..constraints_length {
                     constraints_buf.push(input.read_byte()?);
@@ -152,7 +152,7 @@ impl Decode for Method {
 
 #[cfg(test)]
 mod test {
-    use super::Method;
+    use super::{Method, BLOCK_COOLDOWN_MASK, CONSTRAINTS_MASK};
     use codec::{Decode, Encode};
     use std::assert_eq;
 
@@ -188,12 +188,12 @@ mod test {
 
     #[test]
     fn it_encodes_with_block_cooldown() {
-        let method = Method::new("TestMethod").block_cooldown(0x10204080);
+        let method = Method::new("TestMethod").block_cooldown(0x08040201);
 
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x80_u8],
+            vec![BLOCK_COOLDOWN_MASK],
             expected_name,
             remainder,
             vec![0x01, 0x02, 0x04, 0x08],
@@ -210,10 +210,10 @@ mod test {
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x40_u8],
+            vec![CONSTRAINTS_MASK],
             expected_name,
             remainder,
-            vec![0x10],
+            vec![8],
             vec![0x55; 9],
         ]
         .concat();
@@ -235,7 +235,7 @@ mod test {
         let expected_name = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x40_u8],
+            vec![CONSTRAINTS_MASK],
             expected_name,
             remainder,
             vec![0xff],
@@ -287,7 +287,7 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
-            vec![0x80_u8],
+            vec![BLOCK_COOLDOWN_MASK],
             name_bytes,
             remainder,
             vec![0x01, 0x02, 0x04, 0x08],
@@ -296,7 +296,7 @@ mod test {
 
         let method = Method::decode(&mut &encoded[..]).unwrap();
         assert_eq!(method.name, "TestMethod");
-        assert_eq!(method.block_cooldown, Some(0x10204080));
+        assert_eq!(method.block_cooldown, Some(0x08040201));
         assert_eq!(method.constraints, None);
     }
 
@@ -304,8 +304,13 @@ mod test {
     fn decode_fails_with_insufficient_bytes_for_block_cooldown() {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
-        let encoded: Vec<u8> =
-            [vec![0x80_u8], name_bytes, remainder, vec![0x01, 0x02, 0x04]].concat();
+        let encoded: Vec<u8> = [
+            vec![BLOCK_COOLDOWN_MASK],
+            name_bytes,
+            remainder,
+            vec![0x01, 0x02, 0x04],
+        ]
+        .concat();
 
         assert_eq!(
             Method::decode(&mut &encoded[..]),
@@ -318,7 +323,14 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0x00; 33_usize];
-        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
+        let encoded: Vec<u8> = [
+            vec![CONSTRAINTS_MASK],
+            name_bytes,
+            remainder,
+            vec![32],
+            pact,
+        ]
+        .concat();
 
         let method = Method::decode(&mut &encoded[..]).unwrap();
         assert_eq!(method.name, "TestMethod");
@@ -331,7 +343,14 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0xff; 33_usize];
-        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
+        let encoded: Vec<u8> = [
+            vec![CONSTRAINTS_MASK],
+            name_bytes,
+            remainder,
+            vec![32],
+            pact,
+        ]
+        .concat();
 
         assert_eq!(
             Method::decode(&mut &encoded[..]),
@@ -344,7 +363,14 @@ mod test {
         let name_bytes = String::from("TestMethod").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0xff; 32_usize];
-        let encoded: Vec<u8> = [vec![0x40_u8], name_bytes, remainder, vec![0x04], pact].concat();
+        let encoded: Vec<u8> = [
+            vec![CONSTRAINTS_MASK],
+            name_bytes,
+            remainder,
+            vec![32],
+            pact,
+        ]
+        .concat();
 
         assert_eq!(
             Method::decode(&mut &encoded[..]),
@@ -358,18 +384,18 @@ mod test {
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let pact = vec![0x00; 33_usize];
         let encoded: Vec<u8> = [
-            vec![0xc0_u8],
+            vec![CONSTRAINTS_MASK + BLOCK_COOLDOWN_MASK],
             name_bytes,
             remainder,
             vec![0x01, 0x02, 0x04, 0x08],
-            vec![0x04],
+            vec![32],
             pact,
         ]
         .concat();
 
         let method = Method::decode(&mut &encoded[..]).unwrap();
         assert_eq!(method.name, "TestMethod");
-        assert_eq!(method.block_cooldown, Some(0x10204080));
+        assert_eq!(method.block_cooldown, Some(0x08040201));
         assert_eq!(method.constraints, Some(vec![0x00; 33]));
     }
 }
