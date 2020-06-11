@@ -221,7 +221,7 @@ mod test {
         let expected_name = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - expected_name.len()];
         let expected: Vec<u8> = [
-            vec![0x06_u8 << 1],
+            vec![0x06_u8 << 1], // 6 + 1 methods
             expected_name,
             remainder,
             Method::new("I").encode(),
@@ -317,7 +317,7 @@ mod test {
         let name_bytes = String::from("TestModule").into_bytes();
         let remainder = vec![0x00_u8; 32_usize - name_bytes.len()];
         let encoded: Vec<u8> = [
-            vec![0x06_u8 << 1],
+            vec![0x06_u8 << 1], // 6 + 1 methods
             name_bytes,
             remainder,
             Method::new("I").encode(),
