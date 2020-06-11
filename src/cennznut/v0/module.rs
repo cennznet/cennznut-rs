@@ -5,20 +5,21 @@
 //! Delegated runtime module permissioning of CENNZnut for use in CENNZnet
 //!
 
+use super::method::Method;
+use super::MAX_METHODS;
+use super::WILDCARD;
 use crate::cennznut::{MethodName, ModuleName};
+#[cfg(feature = "std")]
+use ::serde::{Deserialize, Serialize};
 use alloc::borrow::ToOwned;
 use alloc::string::ToString;
 use alloc::vec::Vec;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
-
-use super::method::Method;
-use super::MAX_METHODS;
-use super::WILDCARD;
-
 const BLOCK_COOLDOWN_MASK: u8 = 0b0000_0001;
 
 /// A CENNZnet permission domain module
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Module {
     pub name: ModuleName,

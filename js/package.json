@@ -1,0 +1,33 @@
+{
+  "name": "@plugnet/cennznut-wasm",
+  "version": "0.0.1",
+  "description": "Wasm Cennznut codec",
+  "main": "./libNode/cennznut.js",
+  "browser": "./libBrowser/cennznut.js",
+  "directories": {
+    "libNode": "libNode",
+    "libBrowser": "libBrowser",
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^26.0.1"
+  },
+  "scripts": {
+    "build": "rm -rf libNode libBrowser && sh build.sh browser libBrowser && sh build.sh nodejs libNode",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cennznet/cennznut-rs.git"
+  },
+  "keywords": [
+    "cennznut"
+  ],
+  "author": "Centrality Developers",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/cennznet/cennznut-rs/issues"
+  },
+  "homepage": "https://github.com/cennznet/cennznut-rs/js#readme"
+}

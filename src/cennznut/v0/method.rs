@@ -11,12 +11,15 @@ use alloc::vec::Vec;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 use pact::contract::Contract as PactContract;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
-pub const BLOCK_COOLDOWN_MASK: u8 = 0x01;
-pub const CONSTRAINTS_MASK: u8 = 0x02;
-pub const MAX_CONSTRAINTS: usize = 256;
+const BLOCK_COOLDOWN_MASK: u8 = 0x01;
+const CONSTRAINTS_MASK: u8 = 0x02;
+const MAX_CONSTRAINTS: usize = 256;
 
 /// A CENNZnet permission domain module method
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct Method {
     pub name: MethodName,
