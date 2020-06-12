@@ -7,15 +7,11 @@ let encodedCennznut = new Uint8Array([
   95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
   0, 0, 0, 0,
 ]);
-let cennznut;
 
 describe("wasm cennznut", () => {
   test("it decodes and verifies", () => {
-    cennznut = Cennznut.decode(encodedCennznut);
+    let cennznut = Cennznut.decode(encodedCennznut);
     expect(cennznut.encode()).toEqual(encodedCennznut);
-  });
-
-  test ("extract modules and verifies", () => {
     let module = cennznut.getModule("module_test");
     expect(module.name).toEqual('module_test');
     expect(module.block_cooldown).toEqual(86400);
