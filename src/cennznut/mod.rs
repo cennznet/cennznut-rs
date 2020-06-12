@@ -7,7 +7,6 @@
 use alloc::fmt::{self, Display, Formatter};
 use alloc::string::String;
 
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use pact::interpreter::types::PactType;
 
@@ -84,10 +83,7 @@ impl Encode for CENNZnut {
 
 impl Decode for CENNZnut {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let version = u16::from_le_bytes([
-            input.read_byte()?.swap_bits(),
-            input.read_byte()?.swap_bits(),
-        ]);
+        let version = u16::from_le_bytes([input.read_byte()?, input.read_byte()?]);
 
         match version {
             0 => match CENNZnutV0::partial_decode(input) {

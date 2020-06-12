@@ -10,7 +10,6 @@ mod tests;
 
 use alloc::borrow::ToOwned;
 use alloc::vec::Vec;
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode, Input, Output};
 use core::convert::TryFrom;
 use pact::interpreter::{interpret, types::PactType};
@@ -99,10 +98,10 @@ impl Encode for CENNZnutV0 {
 
         preliminary_buf.write(&VERSION_BYTES);
 
-        preliminary_buf.push_byte(module_count.unwrap().swap_bits());
+        preliminary_buf.push_byte(module_count.unwrap());
         preliminary_buf.write(module_payload_buf.as_slice());
 
-        preliminary_buf.push_byte(contract_count.unwrap().swap_bits());
+        preliminary_buf.push_byte(contract_count.unwrap());
         for (_, contract) in &self.contracts {
             contract.encode_to(&mut preliminary_buf);
         }
@@ -116,7 +115,7 @@ impl Encode for CENNZnutV0 {
 
 impl PartialDecode for CENNZnutV0 {
     fn partial_decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let module_count = input.read_byte()?.swap_bits() + 1;
+        let module_count = input.read_byte()? + 1;
         let mut modules = Vec::<(ModuleName, Module)>::default();
 
         for _ in 0..module_count {
@@ -124,7 +123,7 @@ impl PartialDecode for CENNZnutV0 {
             modules.push((m.name.to_owned(), m));
         }
 
-        let contract_count = input.read_byte()?.swap_bits();
+        let contract_count = input.read_byte()?;
         let mut contracts = Vec::<(ContractAddress, Contract)>::default();
 
         for _ in 0..contract_count {
@@ -138,10 +137,7 @@ impl PartialDecode for CENNZnutV0 {
 
 impl Decode for CENNZnutV0 {
     fn decode<I: Input>(input: &mut I) -> Result<Self, codec::Error> {
-        let version = u16::from_le_bytes([
-            input.read_byte()?.swap_bits(),
-            input.read_byte()?.swap_bits(),
-        ]);
+        let version = u16::from_le_bytes([input.read_byte()?, input.read_byte()?]);
         if version != 0 {
             return Err(codec::Error::from("expected version : 0"));
         }

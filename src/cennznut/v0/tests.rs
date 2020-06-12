@@ -14,7 +14,6 @@ use crate::cennznut::{
 };
 use crate::{CENNZnut, CENNZnutV0, TryFrom, ValidationErr};
 
-use bit_reverse::ParallelReverse;
 use codec::{Decode, Encode};
 use pact::contract::{Contract as PactContract, DataTable};
 use pact::interpreter::OpCode;
@@ -72,7 +71,7 @@ fn it_works_encode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let expected_contracts = [vec![0x80, 0x00], vec![0x5a_u8; 32]].concat();
+    let expected_contracts = [vec![0x01, 0x00], vec![0x5a_u8; 32]].concat();
     assert_eq!(
         encoded,
         [expected_version, expected_modules, expected_contracts].concat()
@@ -113,7 +112,7 @@ fn it_works_encode_one_contract() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x80, 0x00];
+    let expected_contract_header = vec![0x01, 0x00];
     let expected_contract_address = vec![0x5a_u8; 32];
     let expected_contracts = [expected_contract_header, expected_contract_address].concat();
 
@@ -131,7 +130,7 @@ fn it_works_decode() {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let encoded_contract_header = vec![0x80, 0x00];
+    let encoded_contract_header = vec![0x01, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
     let encoded_contracts: Vec<u8> = [encoded_contract_header, encoded_contract_address].concat();
 
@@ -161,10 +160,10 @@ fn it_works_encode_with_module_cooldown() {
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104,
-            111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0
+            0, 0, 0, 1, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 0, 109, 101, 116, 104, 111,
+            100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0
         ]
     );
 }
@@ -173,18 +172,16 @@ fn it_works_encode_with_module_cooldown() {
 fn it_works_encode_with_contract_cooldown() {
     let modules = module_for_contracts();
 
-    let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x2222_1111);
+    let contract = Contract::new(&[0x8b_u8; 32]).block_cooldown(0x4433_2211);
     let contracts = make_contracts(&contract);
 
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let expected_contract_header = vec![0x80, 0x80];
-    // 0xd1 = LE 0x8b
-    let expected_contract_address = vec![0xd1_u8; 32];
-    // Little endian representation of 0x22221111 is 0x88884444
-    let expected_contract_cooldown = vec![0x88, 0x88, 0x44, 0x44];
+    let expected_contract_header = vec![0x01, 0x01];
+    let expected_contract_address = vec![0x8b_u8; 32];
+    let expected_contract_cooldown = vec![0x11, 0x22, 0x33, 0x44];
     let expected_contracts = [
         expected_contract_header,
         expected_contract_address,
@@ -201,9 +198,9 @@ fn it_works_encode_with_contract_cooldown() {
 #[test]
 fn it_works_decode_with_module_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 0, 109, 101, 116, 104, 111, 100, 95,
-        116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00,
+        0, 0, 0, 1, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 0, 109, 101, 116, 104, 111, 100, 95,
+        116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     let c0 = CENNZnutV0::try_from(c).unwrap();
@@ -232,10 +229,10 @@ fn it_works_encode_with_method_cooldown() {
     assert_eq!(
         cennznut.encode(),
         vec![
-            0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104,
-            111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 222, 0, 0, 0, 0,
+            0, 0, 0, 1, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 1, 109, 101, 116, 104, 111,
+            100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 123, 0, 0, 0, 0,
         ]
     );
 }
@@ -243,10 +240,10 @@ fn it_works_encode_with_method_cooldown() {
 #[test]
 fn it_works_decode_with_method_cooldown() {
     let encoded: Vec<u8> = vec![
-        0, 0, 0, 128, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111, 100,
-        95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222,
-        0, 0, 0, 0,
+        0, 0, 0, 1, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 1, 109, 101, 116, 104, 111, 100, 95,
+        116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0,
+        0, 0, 0,
     ];
     let c: CENNZnut = Decode::decode(&mut &encoded[..]).expect("It works");
     let c0 = CENNZnutV0::try_from(c).unwrap();
@@ -271,7 +268,7 @@ fn it_works_encode_two_contracts() {
     let modules = module_for_contracts();
 
     let contract_a = Contract::new(&[0x4a_u8; 32]);
-    let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_55aa);
+    let contract_b = Contract::new(&[0x8b_u8; 32]).block_cooldown(0xaa55_33cc);
     let mut contracts = make_contracts(&contract_a);
     contracts.push((contract_b.address, contract_b));
 
@@ -279,18 +276,14 @@ fn it_works_encode_two_contracts() {
 
     let expected_version = vec![0, 0];
     let expected_modules = MODULE_CONTRACT_BYTES.to_vec();
-    // 0x40 == little endian 2
-    let expected_contract_header = vec![0x40];
+    let expected_contract_header = vec![0x02];
     // no cooldown
     let expected_contract_a_header = vec![0x00];
-    // 0x52 = LE 0x4a
-    let expected_contract_a_address = vec![0x52_u8; 32];
-    // cooldown
-    let expected_contract_b_header = vec![0x80];
-    // 0xd1 = LE 0x8b
-    let expected_contract_b_address = vec![0xd1_u8; 32];
-    // Little endian representation of 0xaa5555aa is 0x55aaaa55
-    let expected_contract_b_cooldown = vec![0x55, 0xaa, 0xaa, 0x55];
+    let expected_contract_a_address = vec![0x4a_u8; 32];
+    // has cooldown
+    let expected_contract_b_header = vec![0x01];
+    let expected_contract_b_address = vec![0x8b_u8; 32];
+    let expected_contract_b_cooldown = vec![0xcc, 0x33, 0x55, 0xaa];
     let expected_contracts = [
         expected_contract_header,
         expected_contract_a_header,
@@ -311,7 +304,7 @@ fn it_works_encode_two_contracts() {
 fn it_works_decode_one_contract() {
     let encoded_version = vec![0, 0];
     let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let encoded_contract_header = vec![0x80, 0x00];
+    let encoded_contract_header = vec![0x01, 0x00];
     let encoded_contract_address = vec![0x5a; 32];
     let encoded_contracts: Vec<u8> = [encoded_contract_header, encoded_contract_address].concat();
 
@@ -328,7 +321,7 @@ fn it_works_decode_one_contract() {
 fn it_works_decode_two_contracts() {
     let encoded_version = vec![0, 0];
     let encoded_modules = MODULE_CONTRACT_BYTES.to_vec();
-    let encoded_contract_header = vec![0x40]; // 0x40 = little endian 2
+    let encoded_contract_header = vec![0x02];
     let encoded_contract_a_header = vec![0x00];
     let encoded_contract_a_address = vec![0x4a; 32];
     let encoded_contract_b_header = vec![0x00];
@@ -388,8 +381,8 @@ fn it_works_encode_with_constraints() {
         encoded,
         vec![
             0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116,
-            101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 109, 101, 116, 104, 111, 100, 95, 116,
+            101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0,
             192, 128, 16, 246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224,
             116, 101, 115, 116, 105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
         ]
@@ -397,18 +390,15 @@ fn it_works_encode_with_constraints() {
     let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
     #[allow(clippy::cast_possible_truncation)]
     let len_byte = constraints.len() as u8;
-    assert_eq!(
-        encoded[constraints_length_byte_cursor],
-        (len_byte - 1).swap_bits()
-    );
+    assert_eq!(encoded[constraints_length_byte_cursor], (len_byte - 1));
 }
 
 #[test]
 fn it_works_decode_with_constraints() {
     let encoded: Vec<u8> = vec![
         0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
-        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128, 16,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 192, 128, 16,
         246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
         105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
     ];
@@ -426,10 +416,7 @@ fn it_works_decode_with_constraints() {
         let constraints_length_byte_cursor: usize = 4 + 32 + 1 + 32;
         #[allow(clippy::cast_possible_truncation)]
         let len_byte = constraints.len() as u8;
-        assert_eq!(
-            encoded[constraints_length_byte_cursor].swap_bits() + 1,
-            len_byte,
-        );
+        assert_eq!(encoded[constraints_length_byte_cursor] + 1, len_byte,);
     };
 }
 
@@ -458,16 +445,16 @@ fn it_works_with_lots_of_things_codec() {
     let cennznut = CENNZnutV0 { modules, contracts };
 
     let encoded = vec![
-        0, 0, 128, 192, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 138, 128, 0, 128, 109, 101, 116, 104, 111,
-        100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        222, 0, 0, 0, 128, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 130, 128, 0, 0, 192, 109, 111, 100, 117, 108,
-        101, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 192, 155, 0, 0, 128, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 222, 0, 0, 0, 128, 109, 101, 116, 104,
-        111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 130, 128, 0, 0, 0,
+        0, 0, 1, 3, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 81, 1, 0, 1, 109, 101, 116, 104, 111, 100, 95,
+        116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0,
+        0, 0, 1, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 65, 1, 0, 0, 3, 109, 111, 100, 117, 108, 101, 95, 116,
+        101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 217, 0,
+        0, 1, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 123, 0, 0, 0, 1, 109, 101, 116, 104, 111, 100, 95, 116,
+        101, 115, 116, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 65, 1, 0, 0,
+        0,
     ];
     assert_eq!(cennznut.encode(), encoded);
     assert_eq!(cennznut, CENNZnutV0::decode(&mut &encoded[..]).unwrap());
@@ -651,8 +638,8 @@ fn it_works_get_pact() {
     // A CENNZnut with constraints set
     let encoded_with: Vec<u8> = vec![
         0, 0, 0, 0, 109, 111, 100, 117, 108, 101, 95, 116, 101, 115, 116, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 64, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
-        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 20, 0, 192, 128, 16,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 109, 101, 116, 104, 111, 100, 95, 116, 101, 115,
+        116, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 40, 0, 192, 128, 16,
         246, 0, 0, 0, 0, 0, 0, 0, 128, 16, 178, 128, 0, 0, 0, 0, 0, 0, 0, 224, 116, 101, 115, 116,
         105, 110, 103, 5, 0, 0, 1, 0, 5, 0, 1, 1, 1, 0,
     ];
