@@ -92,7 +92,6 @@ checksum = "7bbb73db36c1246e9034e307d0fba23f9a2e251faa47ade70c1bd252220c8311"
 name = "cennznut"
 version = "0.1.1"
 dependencies = [
- "bit_reverse",
  "pact",
  "parity-scale-codec",
  "serde",
