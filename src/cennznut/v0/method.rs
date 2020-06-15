@@ -94,9 +94,9 @@ impl Encode for Method {
         if let Some(constraints) = &self.constraints {
             let constraints_count =
                 u8::try_from(MAX_CONSTRAINTS.min(constraints.len()).wrapping_sub(1));
-            // if constraints_count.is_ok() {
-            if let Some(len_byte) = constraints_count {
-                //                let len_byte: u8 = constraints_count.unwrap();
+            if constraints_count.is_ok() {
+                //            if let Some(len_byte) = constraints_count {
+                let len_byte: u8 = constraints_count.unwrap();
                 let len: usize = len_byte.into();
                 buf.push_byte(len_byte);
                 buf.write(&constraints[0..=len]);
