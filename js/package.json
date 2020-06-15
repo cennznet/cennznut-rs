@@ -1,5 +1,5 @@
 {
-  "name": "@plugnet/cennznut-wasm",
+  "name": "@cennznet/cennznut-wasm",
   "version": "0.0.1",
   "description": "Wasm Cennznut codec",
   "main": "./libNode/cennznut.js",

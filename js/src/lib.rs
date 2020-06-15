@@ -2,10 +2,9 @@
 
 //! Provide JS-Rust API bindings to create and inspect Cennznut
 use cennznut::{
-    v0::{contract::Contract, method::Method, module::Module, CENNZnutV0},
+    v0::{contract::Contract, module::Module, CENNZnutV0},
     CENNZnut,
 };
-use pact::interpreter::types::PactType;
 use parity_scale_codec::{Decode, Encode};
 use wasm_bindgen::prelude::*;
 
@@ -39,10 +38,10 @@ impl JsHandle {
     pub fn new(modules: &JsValue, contracts: &JsValue) -> Self {
         let modules_vec: Vec<(String, Module)> = modules
             .into_serde()
-            .expect("Deserialization of module failed");
+            .expect("Deserialization of modules failed");
         let contract_vec: Vec<([u8; 32], Contract)> = contracts
             .into_serde()
-            .expect("Deserialization of contract failed");
+            .expect("Deserialization of contracts failed");
         let cennznut: CENNZnutV0 = CENNZnutV0 {
             modules: modules_vec,
             contracts: contract_vec,
@@ -51,23 +50,12 @@ impl JsHandle {
     }
 
     #[allow(non_snake_case)]
-    /// Create modules used for creating Cennznut instance
-    pub fn createModules(moduleName: &str, block_cooldown: u32, methods: &JsValue) -> JsValue {
-        let methods_vec: Vec<(String, Method)> = methods
-            .into_serde()
-            .expect("Deserialization of method failed");
-        let module = Module::new(moduleName)
-            .methods(methods_vec)
-            .block_cooldown(block_cooldown);
-        let mut module_vec: Vec<(String, Module)> = Vec::new();
-        module_vec.push((moduleName.to_string(), module));
-        return JsValue::from_serde(&module_vec).unwrap();
-    }
-
-    #[allow(non_snake_case)]
     /// Return the cennznut module
     pub fn getModule(&self, module: &str) -> JsValue {
         if let CENNZnut::V0(cennznut) = &self.0 {
+            if cennznut.get_module(module).is_none() {
+                return JsValue::UNDEFINED;
+            }
             return JsValue::from_serde(&cennznut.get_module(module).unwrap()).unwrap();
         }
         panic!("unsupported cennznut version");
@@ -77,6 +65,12 @@ impl JsHandle {
     /// Return the cennznut contract
     pub fn getContract(&self, contract_address: &[u8]) -> JsValue {
         if let CENNZnut::V0(cennznut) = &self.0 {
+            if cennznut
+                .get_contract(from_slice_32(contract_address))
+                .is_none()
+            {
+                return JsValue::UNDEFINED;
+            }
             return JsValue::from_serde(
                 &cennznut
                     .get_contract(from_slice_32(contract_address))

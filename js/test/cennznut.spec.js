@@ -77,4 +77,17 @@ describe("wasm cennznut", () => {
     expect(cennznutNew.verifyContract(contract_address)).toEqual(true);
   });
 
+    test("test when module do not exist", () => {
+        let cennznut = Cennznut.decode(encodedCennznut);
+        let module = cennznut.getModule("module_test1");
+        expect(module).toEqual(undefined);
+        const contract_address = new Uint8Array([
+            27, 137,  65,  29, 182,  25, 157,  61,
+            226,  13, 230,  14, 111,   6,  25, 186,
+            227, 117, 177, 244, 172, 147,  40, 119,
+            209,  78,  13, 109, 236, 119, 205, 202
+        ]);
+        let contract = cennznut.getContract(contract_address);
+        expect(contract).toEqual(undefined);
+    });
 });
