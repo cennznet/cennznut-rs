@@ -6,7 +6,7 @@ Currently compliant with the version 0 spec.
 ## Create a Cennznut (unsigned)
 
 ```js
-const Cennznut = require('@cennznet/doughnut-wasm').default;
+const Cennznut = require('@cennznet/cennznut-wasm').default;
 
 // modules (first param) is a vector of tuple of module name and module -  Vec<(ModuleName, Module)>
 // Method is a vector of tuple method name and method - Vec<(MethodName, Method)>
@@ -37,14 +37,25 @@ const modules =  [
                        ]]
  // contract (second argument passed) is vector of contractAddress[u8;] and contract [Contract] - Vec<(ContractAddress, Contract)>
  contract = [[u8;], Contract]
- const contracts  = [[[27,137,65,29,182,25,157,61,226,13,230,14,111,6,25,186,227,117,177,244,172,147,40,119,209,78,13,109,236,119,205,202],{"address":[27,137,65,29,182,25,157,61,226,13,230,14,111,6,25,186,227,117,177,244,172,147,40,119,209,78,13,109,236,119,205,202],"block_cooldown":270549120}]];
+ const contracts  = [
+                      [  // contract_address
+                        [27,137,65,29,182,25,157,61,226,13,230,14,111,6,25,186,227,117,177,244,172,147,40,119,209,78,13,109,236,119,205,202],
+                        // Contract object
+                        {
+                            "address":
+                                [27,137,65,29,182,25,157,61,226,13,230,14,111,6,25,186,227,117,177,244,172,147,40,119,209,78,13,109,236,119,205,202],
+                            "block_cooldown":
+                                270549120
+                        }
+                      ]
+                    ];
 
 return new Cennznut(modules, contracts);
 ```
 
 ## Inspect Cennznut Fields
 
-Getter functions for inspecting a doughnut
+Getter functions for inspecting a CENNZnut
 
 ```js
 const cennznut = new Cennznut(...);
