@@ -20,9 +20,10 @@ pub mod module;
 
 use super::{ContractDomain, RuntimeDomain};
 use crate::{PartialDecode, ValidationErr};
-
 use contract::Contract;
 use module::Module;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 use super::{ContractAddress, ModuleName, CONTRACT_WILDCARD, WILDCARD};
 
@@ -33,6 +34,7 @@ pub const VERSION_BYTES: [u8; 2] = [0, 0];
 pub const MAX_CENNZNUT_BYTES: usize = u16::max_value() as usize;
 
 /// A CENNZnet permission domain struct for embedding in doughnuts
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub struct CENNZnutV0 {
     pub modules: Vec<(ModuleName, Module)>,

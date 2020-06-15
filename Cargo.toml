@@ -3,14 +3,21 @@ name = "cennznut"
 version = "0.1.1"
 authors = ["Centrality Developers <developers@centrality.ai>"]
 edition = "2018"
+description = "The official rust cennznut codec"
+license = "UNLICENSED"
+repository = "https://github.com/cennznet/cennznut-rs"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false }
 pact = { branch = "0.1.0", git = "https://github.com/cennznet/pact", default-features = false }
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
+serde_json = "1.0"
 
 [features]
 default = [ "std" ]
 std = [
   "codec/std",
   "pact/std",
+  "serde/std",
+  "serde_json/std"
 ]

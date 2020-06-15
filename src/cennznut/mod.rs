@@ -12,7 +12,8 @@ use pact::interpreter::types::PactType;
 
 use crate::PartialDecode;
 use crate::ValidationErr;
-
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 pub mod v0;
 
 use core::convert::TryFrom;
@@ -57,6 +58,7 @@ impl Display for ContractDomain {
     }
 }
 
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(test, derive(Clone, Debug, Eq, PartialEq))]
 pub enum CENNZnut {
     V0(CENNZnutV0),
