@@ -1,4 +1,25 @@
-version: 2
+version: 2.1
+commands:
+  build-js:
+    steps:
+      - run:
+          name: Js install + Build
+          command: |
+            # install npm + yarn + wasm-pack
+            sudo apt install npm
+            curl -o- -L https://yarnpkg.com/install.sh | bash
+            export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+            curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+            # build
+            cd js && yarn build
+  test-js:
+    steps:
+      - run:
+          name: Js Test
+          command: |
+            # set PATH env var- not carrying over :/
+            export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+            cd js && yarn && yarn test
 jobs:
   built-and-tested:
     docker:
@@ -31,18 +52,24 @@ jobs:
           command: |
             cargo +nightly --version --verbose
             cargo +nightly check --no-default-features
-      - run:
-          name: Check JS build
-          command: |
-            # install npm + yarn + wasm-pack
-            sudo apt install npm
-            curl -o- -L https://yarnpkg.com/install.sh | bash
-            export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-            curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-            # test js package build
-            cd js && yarn
-            yarn build
-            yarn test
+      # JS
+      - build-js
+      - test-js
+      publish-js:
+        docker:
+          - image: circleci/rust:1.43.1
+        steps:
+          - checkout
+          - build-js
+          - run:
+              name: Publish to NPM
+              command: |
+                echo "//registry.npmjs.org/:_authToken=${NPM_KEY}" > ~/.npmrc
+                cd js
+                # node vs npm versions are funny
+                npm uninstall -g npm
+                npm pack
+                npm publish --access public --tag next
   test:
     docker:
       - image: circleci/rust:1.43.1
@@ -83,4 +110,13 @@ workflows:
             - build
             - test
             - clippy
+              # only publish to npm on release branch
+                - publish-js:
+                requires:
+                  - build
+                  - clippy
+                filters:
+                  branches:
+                    only:
+                      - /^[0-9]+[.][0-9]+[.][0-9](-[a-zA-Z].+)?$/
 
