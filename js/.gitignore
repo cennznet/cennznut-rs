@@ -1,7 +1,5 @@
-# rust stuff, we don't want in npm package
-target
-src
-Cargo.lock
-Cargo.toml
-# js stuff
+# js build output
+*.tgz
 node_modules
+libNode
+libBrowser

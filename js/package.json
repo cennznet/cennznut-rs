@@ -1,14 +1,9 @@
 {
   "name": "@cennznet/cennznut-wasm",
-  "version": "0.0.1-dev.1",
+  "version": "0.0.1-dev.2",
   "description": "Wasm Cennznut codec",
-  "main": "./libNode/cennznut.js",
-  "browser": "./libBrowser/cennznut.js",
-  "directories": {
-    "libNode": "libNode",
-    "libBrowser": "libBrowser",
-    "test": "test"
-  },
+  "main": "libNode/cennznut.js",
+  "browser": "libBrowser/cennznut.js",
   "dependencies": {},
   "devDependencies": {
     "jest": "^26.0.1"
