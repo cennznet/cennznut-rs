@@ -95,7 +95,7 @@ jobs:
             cargo clippy -- -D warnings
 workflows:
   version: 2
-  build-test-clippy:
+  build-test-clippy-publish:
     jobs:
       - build
       - test
@@ -105,13 +105,13 @@ workflows:
             - build
             - test
             - clippy
-              # only publish to npm on release branch
-            - publish-js:
-                requires:
-                - build
-                - clippy
-                filters:
-                  branches:
-                    only:
-                      - /^[0-9]+[.][0-9]+[.][0-9](-[a-zA-Z].+)?$/
+      # only publish to npm on release branch
+      - publish-js:
+          requires:
+            - build
+            - clippy
+            filters:
+              branches:
+                only:
+                  - /^[0-9]+[.][0-9]+[.][0-9](-[a-zA-Z].+)?$/
 
