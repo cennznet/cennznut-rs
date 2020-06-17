@@ -89,7 +89,7 @@ jobs:
     steps:
       - checkout
       - run:
-         name: cargo clippy
+          name: cargo clippy
           command: |
             rustup component add rustfmt clippy
             cargo clippy -- -D warnings
