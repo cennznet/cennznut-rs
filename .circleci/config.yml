@@ -108,8 +108,8 @@ workflows:
               # only publish to npm on release branch
             - publish-js:
                 requires:
-                  - build
-                  - clippy
+                - build
+                - clippy
                 filters:
                   branches:
                     only:
