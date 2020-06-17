@@ -89,14 +89,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: setup
+         name: cargo clippy
           command: |
-            rustup component add clippy
-            rustup install nightly
-      - run:
-          name: cargo clippy
-          command: |
-            cargo clean
+            rustup component add rustfmt clippy
             cargo clippy -- -D warnings
 workflows:
   version: 2
