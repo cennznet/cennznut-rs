@@ -8,6 +8,10 @@
   "devDependencies": {
     "jest": "^26.0.1"
   },
+  "files": [
+    "libBrowser/*",
+    "libNode/*"
+  ],
   "scripts": {
     "build": "rm -rf libNode libBrowser && sh build.sh browser libBrowser && sh build.sh nodejs libNode",
     "test": "jest"
