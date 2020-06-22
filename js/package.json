@@ -1,6 +1,6 @@
 {
   "name": "@cennznet/cennznut-wasm",
-  "version": "0.0.1-dev.2",
+  "version": "0.0.1-dev.0",
   "description": "Wasm Cennznut codec",
   "main": "libNode/cennznut.js",
   "browser": "libBrowser/cennznut.js",
